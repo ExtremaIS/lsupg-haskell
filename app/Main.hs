@@ -8,12 +8,14 @@ import qualified Text.PrettyPrint.ANSI.Leijen as Doc
 import Text.PrettyPrint.ANSI.Leijen (Doc)
 
 -- https://hackage.haskell.org/package/base
-import Control.Applicative (optional)
+import Control.Applicative (many, optional)
 import Control.Monad (when)
 import Data.Bool (bool)
+import Data.Either (partitionEithers)
 import Data.List (intercalate)
+import Data.Maybe (catMaybes)
 import System.Environment (getExecutablePath)
-import System.Exit (ExitCode(ExitFailure, ExitSuccess), exitSuccess, exitWith)
+import System.Exit (ExitCode(ExitFailure, ExitSuccess), exitWith)
 import System.IO (hPutStrLn, stderr, stdout)
 import Text.Read (readMaybe)
 
@@ -47,25 +49,16 @@ defaultUpdate = 8
 
 data Options
   = Options
-    { componentOpt :: !(Maybe Component.Name)
-    , debugOpt     :: !Bool
-    , formatOpt    :: !LsUpg.OutputFormat
-    , imageOpt     :: !(Maybe String)
-    , updateOpt    :: !Int
+    { debugOpt      :: !Bool
+    , formatOpt     :: !LsUpg.OutputFormat
+    , updateOpt     :: !Int
+    , dockerOpt     :: !(Maybe String)
+    , componentArgs :: ![Component.Name]
     }
-
-componentOption :: OA.Parser Component.Name
-componentOption = OA.option (OA.eitherReader TTC.parse) $ mconcat
-    [ OA.long "component"
-    , OA.short 'c'
-    , OA.metavar "COMPONENT"
-    , OA.help "component (default: all)"
-    ]
 
 debugOption :: OA.Parser Bool
 debugOption = OA.switch $ mconcat
     [ OA.long "debug"
-    , OA.short 'd'
     , OA.help "show debug output"
     ]
 
@@ -77,14 +70,6 @@ formatOption = OA.option (OA.eitherReader TTC.parse) $ mconcat
     , OA.value defaultFormat
     , OA.showDefaultWith TTC.render
     , OA.help "output format"
-    ]
-
-imageOption :: OA.Parser String
-imageOption = OA.strOption $ mconcat
-    [ OA.long "image"
-    , OA.short 'i'
-    , OA.metavar "IMAGE"
-    , OA.help "Docker image"
     ]
 
 updateOption :: OA.Parser Int
@@ -100,53 +85,87 @@ updateOption = OA.option (OA.eitherReader parse) $ mconcat
     parse :: String -> Either String Int
     parse = maybe (Left "invalid HOURS") Right . readMaybe
 
+dockerOption :: OA.Parser String
+dockerOption = OA.strOption $ mconcat
+    [ OA.long "docker"
+    , OA.short 'd'
+    , OA.metavar "IMAGE"
+    , OA.help "Docker image"
+    ]
+
+componentArguments :: OA.Parser [Component.Name]
+componentArguments = many . OA.argument (OA.eitherReader TTC.parse) $ mconcat
+    [ OA.metavar "COMPONENT ..."
+    , OA.help "components (default: all)"
+    ]
+
 options :: OA.Parser Options
 options = Options
-    <$> optional componentOption
-    <*> debugOption
+    <$> debugOption
     <*> formatOption
-    <*> optional imageOption
     <*> updateOption
+    <*> optional dockerOption
+    <*> componentArguments
+
+------------------------------------------------------------------------------
+-- $RunFunctions
+
+runDocker :: String -> Options -> IO a
+runDocker image Options{..} = do
+    exePath <- getExecutablePath
+    let args = concat $ catMaybes
+          [ Just
+              [ "run", "--rm", "-it", "-u", "root"
+              , "-v", exePath ++ ":/usr/local/bin/lsupg:ro"
+              , image
+              , "/usr/local/bin/lsupg"
+              ]
+          , if debugOpt then Just ["--debug"] else Nothing
+          , if formatOpt == defaultFormat
+              then Nothing
+              else Just ["--format", TTC.render formatOpt]
+          , if updateOpt == defaultUpdate
+              then Nothing
+              else Just ["--update", show updateOpt]
+          , Just (map TTC.render componentArgs)
+          ]
+    when debugOpt . hPutStrLn stderr . unwords $ "[lsupg]" : "docker" : args
+    exitWith =<< TP.runProcess (TP.proc "docker" args)
+
+------------------------------------------------------------------------------
+
+runAll :: Options -> IO a
+runAll Options{..} = do
+    hasUpgrades <- LsUpg.runAll
+      stdout (bool Nothing (Just stderr) debugOpt)
+      (Just . fromIntegral $ updateOpt * 3600) formatOpt
+    exitWith $ bool ExitSuccess (ExitFailure 3) hasUpgrades
+
+------------------------------------------------------------------------------
+
+runSpecified :: Options -> IO a
+runSpecified Options{..} =
+    case partitionEithers (map LsUpg.lookupComponent componentArgs) of
+      ([], components) -> do
+        hasUpgrades <- LsUpg.run components
+          stdout (bool Nothing (Just stderr) debugOpt)
+          (Just . fromIntegral $ updateOpt * 3600) formatOpt
+        exitWith $ bool ExitSuccess (ExitFailure 3) hasUpgrades
+      (names, _components) -> do
+        hPutStrLn stderr $ "error: component(s) not found: " ++
+          intercalate ", " (map TTC.render names)
+        exitWith $ ExitFailure 2
 
 ------------------------------------------------------------------------------
 -- $Main
 
 main :: IO ()
 main = do
-    Options{..} <- OA.execParser pinfo
-    case imageOpt of
-      Just image -> do
-        exePath <- getExecutablePath
-        let args =
-              [ "run", "--rm", "-it", "-u", "root"
-              , "-v", exePath ++ ":/usr/local/bin/lsupg:ro"
-              , image
-              , "/usr/local/bin/lsupg"
-              , "--format", TTC.render formatOpt
-              , "--update", show updateOpt
-              ] ++ bool [] ["--debug"] debugOpt ++
-              case componentOpt of
-                Just component -> ["--component", TTC.render component]
-                Nothing        -> []
-        when debugOpt . hPutStrLn stderr . unwords $
-          "[lsupg]" : "docker" : args
-        exitWith =<< TP.runProcess (TP.proc "docker" args)
-      Nothing -> case componentOpt of
-        Just name -> do
-          mUpdate <- LsUpg.runComponent name
-            stdout (bool Nothing (Just stderr) debugOpt)
-            (Just . fromIntegral $ updateOpt * 3600) formatOpt
-          case mUpdate of
-            Just True  -> exitWith $ ExitFailure 3
-            Just False -> exitSuccess
-            Nothing -> do
-              hPutStrLn stderr "error: component not found"
-              exitWith $ ExitFailure 2
-        Nothing -> do
-          update <- LsUpg.runAllComponents
-            stdout (bool Nothing (Just stderr) debugOpt)
-            (Just . fromIntegral $ updateOpt * 3600) formatOpt
-          exitWith $ bool ExitSuccess (ExitFailure 3) update
+    opts <- OA.execParser pinfo
+    case (dockerOpt opts, null (componentArgs opts)) of
+      (Just image, _isEmpty) -> runDocker image opts
+      (Nothing,    True)     -> runAll opts
+      (Nothing,    False)    -> runSpecified opts
   where
     pinfo :: OA.ParserInfo Options
     pinfo

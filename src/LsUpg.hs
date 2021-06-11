@@ -7,8 +7,9 @@ module LsUpg
     -- * Types
   , OutputFormat(..)
     -- * API
-  , runAllComponents
-  , runComponent
+  , lookupComponent
+  , run
+  , runAll
   ) where
 
 -- https://hackage.haskell.org/package/aeson
@@ -90,51 +91,17 @@ instance TTC.Render OutputFormat where
 ------------------------------------------------------------------------------
 -- $API
 
-runAllComponents
-  :: Handle
-  -> Maybe Handle
-  -> Maybe NominalDiffTime
-  -> OutputFormat
-  -> IO Bool
-runAllComponents = run allComponents
-
-------------------------------------------------------------------------------
-
-runComponent
-  :: Component.Name
-  -> Handle
-  -> Maybe Handle
-  -> Maybe NominalDiffTime
-  -> OutputFormat
-  -> IO (Maybe Bool)
-runComponent name outHandle mDebugHandle mUpdateDuration outputFormat =
-    case lookupComponent name of
-      Just component -> Just <$>
-        run [component] outHandle mDebugHandle mUpdateDuration outputFormat
-      Nothing -> return Nothing
-
-------------------------------------------------------------------------------
--- $Internal
-
 lookupComponent
   :: Component.Name
-  -> Maybe Component
-lookupComponent name =
-    -- O(n) performance; improve if number of components increases?
-    listToMaybe
-      [ component
-      | component <- allComponents
-      , Component.name component == name
-      ]
-
-------------------------------------------------------------------------------
-
-putDebug
-  :: Maybe Handle
-  -> String
-  -> IO ()
-putDebug Nothing       = const $ return ()
-putDebug (Just handle) = hPutStrLn handle . ("[lsupg] " ++)
+  -> Either Component.Name Component
+-- O(n) performance; improve if number of components increases
+lookupComponent name
+    = maybe (Left name) Right
+    $ listToMaybe
+        [ component
+        | component <- allComponents
+        , Component.name component == name
+        ]
 
 ------------------------------------------------------------------------------
 
@@ -147,7 +114,7 @@ run
   -> IO Bool
 run components outHandle mDebugHandle mUpdateDuration outputFormat = do
     currentTime <- getCurrentTime
-    putDebug mDebugHandle $ "run: " ++ show currentTime
+    putDebug $ "run: " ++ show currentTime
     let shouldUpdate updateTime = case mUpdateDuration of
           Just dur -> currentTime `diffUTCTime` updateTime >= dur
           Nothing  -> False
@@ -170,7 +137,23 @@ run components outHandle mDebugHandle mUpdateDuration outputFormat = do
       OutputJSON  -> BSL.hPutStr outHandle $ A.encode items
       OutputYAML  -> BS.hPutStr outHandle $ Yaml.encode items
 
+    putDebug :: String -> IO ()
+    putDebug = case mDebugHandle of
+      Just handle -> hPutStrLn handle . ("[lsupg] " ++)
+      Nothing     -> const $ return ()
+
 ------------------------------------------------------------------------------
+
+runAll
+  :: Handle
+  -> Maybe Handle
+  -> Maybe NominalDiffTime
+  -> OutputFormat
+  -> IO Bool
+runAll = run allComponents
+
+------------------------------------------------------------------------------
+-- $Internal
 
 table :: [[T.Text]] -> TL.Text
 table rows = TL.unlines
