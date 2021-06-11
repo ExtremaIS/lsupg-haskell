@@ -88,3 +88,18 @@ executable lsupg
   ghc-options: -Wall
   if flag(static)
     ld-options: -static -pthread
+
+test-suite lsupg-test
+  type: exitcode-stdio-1.0
+  hs-source-dirs: test
+  main-is: Spec.hs
+  other-modules:
+      LsUpg.Component.Apt.Test
+  build-depends:
+      base
+    , bytestring
+    , lsupg
+    , tasty
+    , tasty-hunit
+  default-language: Haskell2010
+  ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N

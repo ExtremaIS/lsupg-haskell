@@ -3,7 +3,8 @@
 
 module LsUpg.Component.Apt
   ( -- * Component
-    component
+    name
+  , component
     -- * Internal
   , parseItems
   ) where

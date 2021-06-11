@@ -63,7 +63,7 @@ data Item
     , installedVersion :: !(Maybe Text)
     , availableVersion :: !(Maybe Text)
     }
-  deriving Show
+  deriving (Eq, Show)
 
 instance ToJSON Item where
   toJSON Item{..} = A.object $ catMaybes
