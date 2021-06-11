@@ -59,7 +59,6 @@ library
     , template-haskell
     , text
     , time
-    , transformers
     , ttc
     , typed-process
     , unordered-containers

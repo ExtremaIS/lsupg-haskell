@@ -15,7 +15,7 @@ module LsUpg
 import qualified Data.Aeson as A
 
 -- https://hackage.haskell.org/package/base
-import Control.Monad (when)
+import Control.Monad (forM)
 import Data.List (transpose)
 import Data.Maybe (fromMaybe, listToMaybe)
 import Data.Version (showVersion)
@@ -34,7 +34,7 @@ import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Lazy.IO as TLIO
 
 -- https://hackage.haskell.org/package/time
-import Data.Time.Clock (NominalDiffTime, UTCTime, diffUTCTime, getCurrentTime)
+import Data.Time.Clock (NominalDiffTime, diffUTCTime, getCurrentTime)
 
 -- https://hackage.haskell.org/package/ttc
 import qualified Data.TTC as TTC
@@ -133,8 +133,8 @@ putDebug
   :: Maybe Handle
   -> String
   -> IO ()
-putDebug Nothing _message = return ()
-putDebug (Just handle) message = hPutStrLn handle $ "[lsupg] " ++ message
+putDebug Nothing       = const $ return ()
+putDebug (Just handle) = hPutStrLn handle . ("[lsupg] " ++)
 
 ------------------------------------------------------------------------------
 
@@ -146,24 +146,16 @@ run
   -> OutputFormat
   -> IO Bool
 run components outHandle mDebugHandle mUpdateDuration outputFormat = do
-    time <- getCurrentTime
-    putDebug mDebugHandle $ "run: " ++ show time
-    items <- concat <$> mapM (go time) components
+    currentTime <- getCurrentTime
+    putDebug mDebugHandle $ "run: " ++ show currentTime
+    let shouldUpdate updateTime = case mUpdateDuration of
+          Just dur -> currentTime `diffUTCTime` updateTime >= dur
+          Nothing  -> False
+    items <- fmap concat . forM components $ \component ->
+      Component.run component mDebugHandle shouldUpdate
     putItems items
     return . not $ null items
   where
-    go :: UTCTime -> Component -> IO [Component.Item]
-    go time component = do
-      status <- Component.getStatus component mDebugHandle
-      let update = case status of
-            Component.NotFound -> False
-            Component.Empty -> True
-            Component.Updated time' -> case mUpdateDuration of
-              Just dur -> time `diffUTCTime` time' >= dur
-              Nothing  -> False
-      when update $ Component.doUpdate component mDebugHandle
-      Component.getItems component mDebugHandle
-
     putItems :: [Component.Item] -> IO ()
     putItems items = case outputFormat of
       OutputHuman -> TLIO.hPutStr outHandle $ table

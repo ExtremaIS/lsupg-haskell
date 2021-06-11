@@ -12,7 +12,7 @@ module LsUpg.Component.Apt
 import qualified Data.Attoparsec.ByteString.Char8 as ABS8
 
 -- https://hackage.haskell.org/package/base
-import Control.Monad (unless)
+import Control.Monad (unless, when)
 import Data.Bifunctor (first)
 import Data.Either (partitionEithers)
 import System.IO (Handle, hPutStrLn)
@@ -24,9 +24,8 @@ import qualified Data.ByteString.Lazy.Char8 as BSL8
 -- https://hackage.haskell.org/package/directory
 import qualified System.Directory as Dir
 
--- https://hackage.haskell.org/package/transformers
-import Control.Monad.Trans.Class (lift)
-import Control.Monad.Trans.Except (runExceptT, throwE)
+-- https://hackage.haskell.org/package/time
+import Data.Time.Clock (UTCTime)
 
 -- https://hackage.haskell.org/package/ttc
 import qualified Data.TTC as TTC
@@ -46,75 +45,81 @@ name = $$(TTC.valid "apt")
 
 component :: Component
 component = Component
-    { Component.name      = name
-    , Component.getStatus = getStatus
-    , Component.doUpdate  = doUpdate
-    , Component.getItems  = getItems
+    { Component.name = name
+    , Component.run  = run
     }
 
 ------------------------------------------------------------------------------
 -- $Internal
 
-putDebug
-  :: Maybe Handle
-  -> String
-  -> IO ()
-putDebug Nothing _message = return ()
-putDebug (Just handle) message = hPutStrLn handle $ "[lsupg:apt] " ++ message
+data Status
+  = NotFound
+  | Empty
+  | Updated !UTCTime
+  deriving Show
 
 ------------------------------------------------------------------------------
 
-getStatus
+run
   :: Maybe Handle
-  -> IO Component.Status
-getStatus mHandle = fmap (either id id) . runExceptT $ do
-    exists <- lift $ Dir.doesDirectoryExist listsDir
-    unless exists $ do
-      lift $ putDebug mHandle "getStatus: NotFound"
-      throwE Component.NotFound
-    count <- lift $ length <$> Dir.listDirectory listsDir
-    unless (count > 0) $ do
-      lift $ putDebug mHandle "getStatus: Empty"
-      throwE Component.Empty
-    lift $ do
-      time <- Dir.getModificationTime listsDir
-      putDebug mHandle $ "getStatus: Updated " ++ show time
-      return $ Component.Updated time
+  -> (UTCTime -> Bool)
+  -> IO [Component.Item]
+run mDebugHandle shouldUpdate = do
+    status <- getStatus
+    putDebug $ "getStatus: " ++ show status
+    case plan status of
+      Nothing -> return []
+      Just update -> do
+        when update doUpdate
+        getItems
   where
     listsDir :: FilePath
     listsDir = "/var/lib/apt/lists"
 
-------------------------------------------------------------------------------
+    getStatus :: IO Status
+    getStatus = do
+      exists <- Dir.doesDirectoryExist listsDir
+      if exists
+        then do
+          count <- length <$> Dir.listDirectory listsDir
+          if count > 0
+            then Updated <$> Dir.getModificationTime listsDir
+            else return Empty
+        else return NotFound
 
-doUpdate
-  :: Maybe Handle
-  -> IO ()
-doUpdate mHandle = do
-    putDebug mHandle "doUpdate: apt-get update"
-    let stream = maybe TP.nullStream TP.useHandleOpen mHandle
-    TP.runProcess_
-      . TP.setStdin TP.nullStream
-      . TP.setStdout stream
-      . TP.setStderr stream
-      $ TP.proc "apt-get" ["update"]
+    plan :: Status -> Maybe Bool
+    plan NotFound             = Nothing
+    plan Empty                = Just True
+    plan (Updated updateTime) = Just $ shouldUpdate updateTime
 
-------------------------------------------------------------------------------
+    doUpdate :: IO ()
+    doUpdate = do
+      putDebug "doUpdate: apt-get update"
+      let stream = maybe TP.nullStream TP.useHandleOpen mDebugHandle
+      TP.runProcess_
+        . TP.setStdin TP.nullStream
+        . TP.setStdout stream
+        . TP.setStderr stream
+        $ TP.proc "apt-get" ["update"]
 
-getItems
-  :: Maybe Handle
-  -> IO [Component.Item]
-getItems mHandle = do
-    putDebug mHandle "getItems: apt-get dist-upgrade -s"
-    output <- TP.readProcessStdout_
-      . TP.setStdin TP.nullStream
-      . TP.setStderr (maybe TP.nullStream TP.useHandleOpen mHandle)
-      $ TP.proc "apt-get" ["dist-upgrade", "-s"]
-    maybe (return ()) (`BSL8.hPut` output) mHandle
-    let (errs, items) = parseItems output
-    unless (null errs) $ do
-      putDebug mHandle "getItems: parseItems"
-      mapM_ (putDebug mHandle) errs
-    return items
+    getItems :: IO [Component.Item]
+    getItems = do
+      putDebug "getItems: apt-get dist-upgrade -s"
+      output <- TP.readProcessStdout_
+        . TP.setStdin TP.nullStream
+        . TP.setStderr (maybe TP.nullStream TP.useHandleOpen mDebugHandle)
+        $ TP.proc "apt-get" ["dist-upgrade", "-s"]
+      maybe (return ()) (`BSL8.hPut` output) mDebugHandle
+      let (errs, items) = parseItems output
+      unless (null errs) $ do
+        putDebug "getItems: parseItems"
+        mapM_ putDebug errs
+      return items
+
+    putDebug :: String -> IO ()
+    putDebug = case mDebugHandle of
+      Just handle -> hPutStrLn handle . ("[lsupg:apt] " ++)
+      Nothing     -> const $ return ()
 
 ------------------------------------------------------------------------------
 

@@ -4,7 +4,6 @@
 
 General:
 
-* Implement component state
 * Audit/clean code
 
 Components:

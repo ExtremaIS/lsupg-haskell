@@ -5,13 +5,10 @@
 {-# LANGUAGE RecordWildCards #-}
 
 module LsUpg.Component
-  ( -- * Constants
-    csvNull
-    -- * Types
-  , Component(..)
+  ( -- * Types
+    Component(..)
   , Item(..)
   , Name
-  , Status(..)
   ) where
 
 -- https://hackage.haskell.org/package/aeson
@@ -49,20 +46,12 @@ import qualified Data.HashMap.Strict as HashMap
 import qualified Data.Vector as V
 
 ------------------------------------------------------------------------------
--- $Constants
-
-csvNull :: CSV.Field
-csvNull = ""
-
-------------------------------------------------------------------------------
 -- $Types
 
 data Component
   = Component
-    { name      :: !Name
-    , getStatus :: Maybe Handle -> IO Status
-    , doUpdate  :: Maybe Handle -> IO ()
-    , getItems  :: Maybe Handle -> IO [Item]
+    { name :: !Name
+    , run  :: Maybe Handle -> (UTCTime -> Bool) -> IO [Item]
     }
 
 ------------------------------------------------------------------------------
@@ -88,16 +77,16 @@ instance CSV.ToNamedRecord Item where
   toNamedRecord Item{..} = HashMap.fromList
     [ ("component_name", TTC.render componentName)
     , ("item_name", TTC.convert itemName)
-    , ("installed_version", maybe csvNull TTC.convert installedVersion)
-    , ("available_version", maybe csvNull TTC.convert availableVersion)
+    , ("installed_version", maybe "" TTC.convert installedVersion)
+    , ("available_version", maybe "" TTC.convert availableVersion)
     ]
 
 instance CSV.ToRecord Item where
   toRecord Item{..} = V.fromList
     [ TTC.render componentName
     , TTC.convert itemName
-    , maybe csvNull TTC.convert installedVersion
-    , maybe csvNull TTC.convert availableVersion
+    , maybe "" TTC.convert installedVersion
+    , maybe "" TTC.convert availableVersion
     ]
 
 ------------------------------------------------------------------------------
@@ -124,11 +113,3 @@ instance CSV.ToField Name where
 
 instance ToJSON Name where
   toJSON = A.String . TTC.render
-
-------------------------------------------------------------------------------
-
-data Status
-  = NotFound
-  | Empty
-  | Updated !UTCTime
-  deriving Show
