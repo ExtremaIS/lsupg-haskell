@@ -15,10 +15,11 @@ Components:
 
 ## Tests
 
-* Parsing tests
+* Add component tests during component implementation
 
 ## Documentation
 
+* API documentation
 * README
 * Manual
 
@@ -28,3 +29,4 @@ Components:
 * Static executable
     * Cabal?
     * Nix?
+* Distribution tarball
