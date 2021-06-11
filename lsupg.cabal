@@ -1,0 +1,91 @@
+name:           lsupg
+version:        0.0.0.0
+category:       Utils
+synopsis:       list items in a container that can be upgraded
+description:
+  This package implements a static executable that can be run in containers to
+  check for upgrades.  Please see the README on GitHub at
+  <https://github.com/ExtremaIS/lsupg-haskell#readme>.
+
+homepage:       https://github.com/ExtremaIS/lsupg-haskell#readme
+bug-reports:    https://github.com/ExtremaIS/lsupg-haskell/issues
+author:         Travis Cardwell <travis.cardwell@extrema.is>
+maintainer:     Travis Cardwell <travis.cardwell@extrema.is>
+copyright:      Copyright (c) 2021 Travis Cardwell
+license:        MIT
+license-file:   LICENSE
+
+cabal-version:  1.24
+build-type:     Simple
+tested-with:
+  GHC ==8.2.2
+   || ==8.4.4
+   || ==8.6.5
+   || ==8.8.4
+   || ==8.10.4
+   || ==9.0.1
+
+extra-source-files:
+  CHANGELOG.md
+  README.md
+
+source-repository head
+  type: git
+  location: https://github.com/ExtremaIS/lsupg-haskell.git
+
+flag static
+  description: Pass -static/-pthread to ghc when linking
+  default: False
+
+flag write-hie
+  description: write .hie files
+  default: False
+
+library
+  hs-source-dirs: src
+  exposed-modules:
+      LsUpg
+    , LsUpg.Component
+    , LsUpg.Component.Apt
+  other-modules:
+      Paths_lsupg
+  build-depends:
+      aeson
+    , attoparsec
+    , base >=4.7 && <5
+    , bytestring
+    , cassava
+    , directory
+    , template-haskell
+    , text
+    , time
+    , transformers
+    , ttc
+    , typed-process
+    , unordered-containers
+    , vector
+    , yaml
+  default-language: Haskell2010
+  default-extensions:
+      OverloadedStrings
+  if flag(write-hie)
+    ghc-options: -Wall -fwrite-ide-info -hiedir=.hie
+  else
+    ghc-options: -Wall
+
+executable lsupg
+  hs-source-dirs: app
+  main-is: Main.hs
+  other-modules:
+      LibOA
+  build-depends:
+      ansi-wl-pprint >=0.6 && <0.7
+    , base
+    , optparse-applicative >=0.14 && <0.17
+    , lsupg
+    , ttc
+    , typed-process
+  default-language: Haskell2010
+  ghc-options: -Wall
+  if flag(static)
+    ld-options: -static -pthread
