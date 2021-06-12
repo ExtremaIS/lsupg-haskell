@@ -2,7 +2,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 module LsUpg.Component.Apt
-  ( -- * Component
+  ( -- * Constants
     name
   , component
     -- * Internal
