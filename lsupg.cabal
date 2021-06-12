@@ -48,6 +48,7 @@ library
     , LsUpg.Component
     , LsUpg.Component.Apk
     , LsUpg.Component.Apt
+    , LsUpg.Component.Dnf
     , LsUpg.Component.Nix
     , LsUpg.Component.Pacman
   other-modules:
@@ -99,6 +100,7 @@ test-suite lsupg-test
   other-modules:
       LsUpg.Component.Apk.Test
     , LsUpg.Component.Apt.Test
+    , LsUpg.Component.Dnf.Test
     , LsUpg.Component.Nix.Test
     , LsUpg.Component.Pacman.Test
   build-depends:
