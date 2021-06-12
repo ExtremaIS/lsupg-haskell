@@ -44,6 +44,7 @@ import qualified Data.Yaml as Yaml
 import qualified LsUpg.Component as Component
 import LsUpg.Component (Component)
 import qualified LsUpg.Component.Apt
+import qualified LsUpg.Component.Pacman
 
 -- (lsupg:cabal)
 import qualified Paths_lsupg as Project
@@ -63,6 +64,7 @@ version = "lsupg-haskell " ++ showVersion Project.version
 allComponents :: [Component]
 allComponents =
     [ LsUpg.Component.Apt.component
+    , LsUpg.Component.Pacman.component
     ]
 
 ------------------------------------------------------------------------------
@@ -147,4 +149,4 @@ table rows = TL.unlines
     ]
   where
     lens :: [Int]
-    lens = map ((+) 2 . sum . map T.length) $ transpose rows
+    lens = map ((+) 2 . maximum . map T.length) $ transpose rows

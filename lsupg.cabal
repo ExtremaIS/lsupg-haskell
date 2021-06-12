@@ -47,6 +47,7 @@ library
       LsUpg
     , LsUpg.Component
     , LsUpg.Component.Apt
+    , LsUpg.Component.Pacman
   other-modules:
       Paths_lsupg
   build-depends:
