@@ -150,18 +150,11 @@ main = do
           , OA.progDesc "list items that can be upgraded"
           , OA.failureCode 2
           , OA.footerDoc . Just $ LibOA.vspace
-              [ componentsHelp
-              , outputFormatHelp
+              [ outputFormatHelp
+              , componentsHelp
               , exitCodesHelp
               ]
           ]
-
-    componentsHelp :: Doc
-    componentsHelp
-      = LibOA.section "COMPONENT options:"
-      . Doc.text
-      . intercalate ", "
-      $ map (TTC.render . Component.name) LsUpg.allComponents
 
     outputFormatHelp :: Doc
     outputFormatHelp
@@ -170,6 +163,13 @@ main = do
       . intercalate ", "
       . map (TTC.render @LsUpg.OutputFormat)
       $ [minBound ..]
+
+    componentsHelp :: Doc
+    componentsHelp
+      = LibOA.section "COMPONENTs:"
+      . Doc.text
+      . intercalate ", "
+      $ map (TTC.render . Component.name) LsUpg.allComponents
 
     exitCodesHelp :: Doc
     exitCodesHelp = LibOA.section "Exit codes:" $ LibOA.table
