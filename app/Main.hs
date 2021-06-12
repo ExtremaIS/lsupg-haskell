@@ -158,7 +158,7 @@ main = do
 
     outputFormatHelp :: Doc
     outputFormatHelp
-      = LibOA.section "FORMAT options:"
+      = LibOA.section "FORMATs:"
       . Doc.text
       . intercalate ", "
       . map (TTC.render @LsUpg.OutputFormat)
