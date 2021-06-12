@@ -13,10 +13,11 @@ module LsUpg.Component.Nix
 import qualified Data.Attoparsec.ByteString.Char8 as ABS8
 
 -- https://hackage.haskell.org/package/base
-import Control.Monad (guard, unless, void)
+import Control.Monad (guard, mzero, unless, void)
 import Data.Bifunctor (bimap, first)
 import Data.Char (isDigit)
 import Data.Either (partitionEithers)
+import Data.Maybe (fromMaybe, isJust)
 import System.IO (Handle, hPutStrLn)
 
 -- https://hackage.haskell.org/package/bytestring
@@ -26,6 +27,10 @@ import qualified Data.ByteString.Lazy.Char8 as BSL8
 
 -- https://hackage.haskell.org/package/directory
 import qualified System.Directory as Dir
+
+-- https://hackage.haskell.org/package/transformers
+import Control.Monad.Trans.Class (lift)
+import Control.Monad.Trans.Maybe (MaybeT(runMaybeT))
 
 -- https://hackage.haskell.org/package/ttc
 import qualified Data.TTC as TTC
@@ -55,45 +60,54 @@ component = Component
 run
   :: Maybe Handle
   -> IO [Component.Item]
-run mDebugHandle = do
-    exists <- Dir.doesDirectoryExist nixDir
-    if exists
-      then do
-        doUpdate
-        getItems
-      else do
-        putDebug "not found (skipping)"
-        return []
+run mDebugHandle = fmap (fromMaybe []) . runMaybeT $ do
+    nixDirExists <- lift $ Dir.doesDirectoryExist nixDir
+    unless nixDirExists $ do
+      putDebug $ nixDir ++ " not found (skipping)"
+      mzero
+    nixChannelProgramExists <- fmap isJust . lift $
+      Dir.findExecutable "nix-channel"
+    unless nixChannelProgramExists $ do
+      putDebug "nix-channel not found (skipping)"
+      mzero
+    nixEnvProgramExists <- fmap isJust . lift $ Dir.findExecutable "nix-env"
+    unless nixEnvProgramExists $ do
+      putDebug "nix-env not found (skipping)"
+      mzero
+    doUpdate
+    getItems
   where
     nixDir :: FilePath
     nixDir = "/nix"
 
-    doUpdate :: IO ()
+    doUpdate :: MaybeT IO ()
     doUpdate = do
       putDebug "doUpdate: nix-channel --update"
       let stream = maybe TP.nullStream TP.useHandleOpen mDebugHandle
-      TP.runProcess_
+      lift
+        . TP.runProcess_
         . TP.setStdin TP.nullStream
         . TP.setStdout stream
         . TP.setStderr stream
         $ TP.proc "nix-channel" ["--update"]
 
-    getItems :: IO [Component.Item]
+    getItems :: MaybeT IO [Component.Item]
     getItems = do
       putDebug "getItems: nix-env --upgrade --dry-run"
-      output <- TP.readProcessStderr_
+      output <- lift
+        . TP.readProcessStderr_
         . TP.setStdin TP.nullStream
         . TP.setStdout (maybe TP.nullStream TP.useHandleOpen mDebugHandle)
         $ TP.proc "nix-env" ["--upgrade", "--dry-run"]
-      maybe (return ()) (`BSL8.hPut` output) mDebugHandle
+      lift $ maybe (return ()) (`BSL8.hPut` output) mDebugHandle
       putDebug "getItems: parseItems"
       let (errs, items) = parseItems output
       unless (null errs) $ mapM_ putDebug errs
       return items
 
-    putDebug :: String -> IO ()
+    putDebug :: String -> MaybeT IO ()
     putDebug = case mDebugHandle of
-      Just handle -> hPutStrLn handle . ("[lsupg:nix] " ++)
+      Just handle -> lift . hPutStrLn handle . ("[lsupg:nix] " ++)
       Nothing     -> const $ return ()
 
 ------------------------------------------------------------------------------

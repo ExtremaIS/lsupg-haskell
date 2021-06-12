@@ -13,9 +13,10 @@ module LsUpg.Component.Apt
 import qualified Data.Attoparsec.ByteString.Char8 as ABS8
 
 -- https://hackage.haskell.org/package/base
-import Control.Monad (unless)
+import Control.Monad (mzero, unless)
 import Data.Bifunctor (first)
 import Data.Either (partitionEithers)
+import Data.Maybe (fromMaybe, isJust)
 import System.IO (Handle, hPutStrLn)
 
 -- https://hackage.haskell.org/package/bytestring
@@ -24,6 +25,10 @@ import qualified Data.ByteString.Lazy.Char8 as BSL8
 
 -- https://hackage.haskell.org/package/directory
 import qualified System.Directory as Dir
+
+-- https://hackage.haskell.org/package/transformers
+import Control.Monad.Trans.Class (lift)
+import Control.Monad.Trans.Maybe (MaybeT(runMaybeT))
 
 -- https://hackage.haskell.org/package/ttc
 import qualified Data.TTC as TTC
@@ -53,45 +58,49 @@ component = Component
 run
   :: Maybe Handle
   -> IO [Component.Item]
-run mDebugHandle = do
-    exists <- Dir.doesDirectoryExist listsDir
-    if exists
-      then do
-        doUpdate
-        getItems
-      else do
-        putDebug "not found (skipping)"
-        return []
+run mDebugHandle = fmap (fromMaybe []) . runMaybeT $ do
+    listsDirExists <- lift $ Dir.doesDirectoryExist listsDir
+    unless listsDirExists $ do
+      putDebug $ listsDir ++ " not found (skipping)"
+      mzero
+    aptProgramExists <- fmap isJust . lift $ Dir.findExecutable "apt"
+    unless aptProgramExists $ do
+      putDebug "apt program not found (skipping)"
+      mzero
+    doUpdate
+    getItems
   where
     listsDir :: FilePath
     listsDir = "/var/lib/apt/lists"
 
-    doUpdate :: IO ()
+    doUpdate :: MaybeT IO ()
     doUpdate = do
       putDebug "doUpdate: apt-get update"
       let stream = maybe TP.nullStream TP.useHandleOpen mDebugHandle
-      TP.runProcess_
+      lift
+        . TP.runProcess_
         . TP.setStdin TP.nullStream
         . TP.setStdout stream
         . TP.setStderr stream
         $ TP.proc "apt-get" ["update"]
 
-    getItems :: IO [Component.Item]
+    getItems :: MaybeT IO [Component.Item]
     getItems = do
       putDebug "getItems: apt-get dist-upgrade -s"
-      output <- TP.readProcessStdout_
+      output <- lift
+        . TP.readProcessStdout_
         . TP.setStdin TP.nullStream
         . TP.setStderr (maybe TP.nullStream TP.useHandleOpen mDebugHandle)
         $ TP.proc "apt-get" ["dist-upgrade", "-s"]
-      maybe (return ()) (`BSL8.hPut` output) mDebugHandle
+      lift $ maybe (return ()) (`BSL8.hPut` output) mDebugHandle
       putDebug "getItems: parseItems"
       let (errs, items) = parseItems output
       unless (null errs) $ mapM_ putDebug errs
       return items
 
-    putDebug :: String -> IO ()
+    putDebug :: String -> MaybeT IO ()
     putDebug = case mDebugHandle of
-      Just handle -> hPutStrLn handle . ("[lsupg:apt] " ++)
+      Just handle -> lift . hPutStrLn handle . ("[lsupg:apt] " ++)
       Nothing     -> const $ return ()
 
 ------------------------------------------------------------------------------

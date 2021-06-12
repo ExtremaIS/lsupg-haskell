@@ -13,9 +13,10 @@ module LsUpg.Component.Apk
 import qualified Data.Attoparsec.ByteString.Char8 as ABS8
 
 -- https://hackage.haskell.org/package/base
-import Control.Monad (unless, void)
+import Control.Monad (mzero, unless, void)
 import Data.Bifunctor (first)
 import Data.Either (partitionEithers)
+import Data.Maybe (fromMaybe, isJust)
 import System.IO (Handle, hPutStrLn)
 
 -- https://hackage.haskell.org/package/bytestring
@@ -24,6 +25,10 @@ import qualified Data.ByteString.Lazy.Char8 as BSL8
 
 -- https://hackage.haskell.org/package/directory
 import qualified System.Directory as Dir
+
+-- https://hackage.haskell.org/package/transformers
+import Control.Monad.Trans.Class (lift)
+import Control.Monad.Trans.Maybe (MaybeT(runMaybeT))
 
 -- https://hackage.haskell.org/package/ttc
 import qualified Data.TTC as TTC
@@ -53,45 +58,49 @@ component = Component
 run
   :: Maybe Handle
   -> IO [Component.Item]
-run mDebugHandle = do
-    exists <- Dir.doesDirectoryExist apkDir
-    if exists
-      then do
-        doUpdate
-        getItems
-      else do
-        putDebug "not found (skipping)"
-        return []
+run mDebugHandle = fmap (fromMaybe []) . runMaybeT $ do
+    apkDirExists <- lift $ Dir.doesDirectoryExist apkDir
+    unless apkDirExists $ do
+      putDebug $ apkDir ++ " not found (skipping)"
+      mzero
+    apkProgramExists <- fmap isJust . lift $ Dir.findExecutable "apk"
+    unless apkProgramExists $ do
+      putDebug "apk program not found (skipping)"
+      mzero
+    doUpdate
+    getItems
   where
     apkDir :: FilePath
     apkDir = "/var/cache/apk"
 
-    doUpdate :: IO ()
+    doUpdate :: MaybeT IO ()
     doUpdate = do
       putDebug "doUpdate: apk update"
       let stream = maybe TP.nullStream TP.useHandleOpen mDebugHandle
-      TP.runProcess_
+      lift
+        . TP.runProcess_
         . TP.setStdin TP.nullStream
         . TP.setStdout stream
         . TP.setStderr stream
         $ TP.proc "apk" ["update"]
 
-    getItems :: IO [Component.Item]
+    getItems :: MaybeT IO [Component.Item]
     getItems = do
       putDebug "getItems: apk upgrade -s"
-      output <- TP.readProcessStdout_
+      output <- lift
+        . TP.readProcessStdout_
         . TP.setStdin TP.nullStream
         . TP.setStderr (maybe TP.nullStream TP.useHandleOpen mDebugHandle)
         $ TP.proc "apk" ["upgrade", "-s"]
-      maybe (return ()) (`BSL8.hPut` output) mDebugHandle
+      lift $ maybe (return ()) (`BSL8.hPut` output) mDebugHandle
       putDebug "getItems: parseItems"
       let (errs, items) = parseItems output
       unless (null errs) $ mapM_ putDebug errs
       return items
 
-    putDebug :: String -> IO ()
+    putDebug :: String -> MaybeT IO ()
     putDebug = case mDebugHandle of
-      Just handle -> hPutStrLn handle . ("[lsupg:apk] " ++)
+      Just handle -> lift . hPutStrLn handle . ("[lsupg:apk] " ++)
       Nothing     -> const $ return ()
 
 ------------------------------------------------------------------------------
