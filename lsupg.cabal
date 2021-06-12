@@ -48,6 +48,7 @@ library
     , LsUpg.Component
     , LsUpg.Component.Apk
     , LsUpg.Component.Apt
+    , LsUpg.Component.Nix
     , LsUpg.Component.Pacman
   other-modules:
       Paths_lsupg
@@ -96,6 +97,7 @@ test-suite lsupg-test
   main-is: Spec.hs
   other-modules:
       LsUpg.Component.Apt.Test
+    , LsUpg.Component.Nix.Test
   build-depends:
       base
     , bytestring

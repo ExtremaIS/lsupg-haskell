@@ -45,6 +45,7 @@ import qualified LsUpg.Component as Component
 import LsUpg.Component (Component)
 import qualified LsUpg.Component.Apk
 import qualified LsUpg.Component.Apt
+import qualified LsUpg.Component.Nix
 import qualified LsUpg.Component.Pacman
 
 -- (lsupg:cabal)
@@ -66,6 +67,7 @@ allComponents :: [Component]
 allComponents =
     [ LsUpg.Component.Apk.component
     , LsUpg.Component.Apt.component
+    , LsUpg.Component.Nix.component
     , LsUpg.Component.Pacman.component
     ]
 
