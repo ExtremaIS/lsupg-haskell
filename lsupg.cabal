@@ -99,6 +99,7 @@ test-suite lsupg-test
       LsUpg.Component.Apk.Test
     , LsUpg.Component.Apt.Test
     , LsUpg.Component.Nix.Test
+    , LsUpg.Component.Pacman.Test
   build-depends:
       base
     , bytestring

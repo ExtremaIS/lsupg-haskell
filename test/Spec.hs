@@ -7,6 +7,7 @@ import Test.Tasty (defaultMain, testGroup)
 import qualified LsUpg.Component.Apk.Test
 import qualified LsUpg.Component.Apt.Test
 import qualified LsUpg.Component.Nix.Test
+import qualified LsUpg.Component.Pacman.Test
 
 ------------------------------------------------------------------------------
 
@@ -15,4 +16,5 @@ main = defaultMain $ testGroup "main"
     [ LsUpg.Component.Apk.Test.tests
     , LsUpg.Component.Apt.Test.tests
     , LsUpg.Component.Nix.Test.tests
+    , LsUpg.Component.Pacman.Test.tests
     ]

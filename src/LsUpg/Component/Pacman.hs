@@ -4,6 +4,8 @@ module LsUpg.Component.Pacman
   ( -- * Constants
     name
   , component
+    -- * Internal
+  , parseItems
   ) where
 
 -- https://hackage.haskell.org/package/attoparsec
