@@ -18,8 +18,8 @@ import qualified LsUpg.Component.Apt as Apt
 
 ------------------------------------------------------------------------------
 
-outputNone :: ByteString
-outputNone = BSL8.unlines
+noneOutput :: ByteString
+noneOutput = BSL8.unlines
     [ "Reading package lists... Done"
     , "Building dependency tree       "
     , "Reading state information... Done"
@@ -29,12 +29,12 @@ outputNone = BSL8.unlines
 
 testNone :: TestTree
 testNone = testCase "none" $
-    ([], []) @=? Apt.parseItems outputNone
+    ([], []) @=? Apt.parseItems noneOutput
 
 ------------------------------------------------------------------------------
 
-outputUpgrade :: ByteString
-outputUpgrade = BSL8.unlines
+upgradeOutput :: ByteString
+upgradeOutput = BSL8.unlines
     [ "Reading package lists... Done"
     , "Building dependency tree       "
     , "Reading state information... Done"
@@ -56,12 +56,12 @@ upgradeItem = Component.Item
 
 testUpgrade :: TestTree
 testUpgrade = testCase "upgrade" $
-    ([], [upgradeItem]) @=? Apt.parseItems outputUpgrade
+    ([], [upgradeItem]) @=? Apt.parseItems upgradeOutput
 
 ------------------------------------------------------------------------------
 
-outputNew :: ByteString
-outputNew = BSL8.unlines
+newOutput :: ByteString
+newOutput = BSL8.unlines
     [ "Reading package lists... Done"
     , "Building dependency tree       "
     , "Reading state information... Done"
@@ -82,12 +82,12 @@ newItem = Component.Item
 
 testNew :: TestTree
 testNew = testCase "new" $
-    ([], [newItem]) @=? Apt.parseItems outputNew
+    ([], [newItem]) @=? Apt.parseItems newOutput
 
 ------------------------------------------------------------------------------
 
-outputError :: ByteString
-outputError = BSL8.unlines
+errorOutput :: ByteString
+errorOutput = BSL8.unlines
     [ "Reading package lists... Done"
     , "Building dependency tree       "
     , "Reading state information... Done"
@@ -106,7 +106,7 @@ outputError = BSL8.unlines
 
 testError :: TestTree
 testError = testCase "error" $
-    ([err], [newItem, upgradeItem]) @=? Apt.parseItems outputError
+    ([err], [newItem, upgradeItem]) @=? Apt.parseItems errorOutput
   where
     err :: String
     err = "error parsing apt line: Inst error invalid line"
