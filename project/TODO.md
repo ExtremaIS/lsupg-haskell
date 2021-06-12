@@ -23,6 +23,7 @@ Components:
 ## Project
 
 * Add dependency version constraints
+* Add CI testing
 * Static executable
     * Cabal?
     * Nix?
