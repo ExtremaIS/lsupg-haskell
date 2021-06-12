@@ -8,14 +8,11 @@ General:
 
 Components:
 
-* rpm/yum/dnf
-* Alpine
-* Arch
-* Nix
+* yum?
+    * Do not run if dnf already run?
+    * `yum check-update`
 
 ## Tests
-
-* Add component tests during component implementation
 
 ## Documentation
 
