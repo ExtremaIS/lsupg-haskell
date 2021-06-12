@@ -48,8 +48,9 @@ name = $$(TTC.valid "apt")
 
 component :: Component
 component = Component
-    { Component.name = name
-    , Component.run  = run
+    { Component.name        = name
+    , Component.run         = run
+    , Component.description = "Debian packages"
     }
 
 ------------------------------------------------------------------------------

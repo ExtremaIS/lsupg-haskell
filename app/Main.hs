@@ -165,11 +165,10 @@ main = do
       $ [minBound ..]
 
     componentsHelp :: Doc
-    componentsHelp
-      = LibOA.section "COMPONENTs:"
-      . Doc.text
-      . intercalate ", "
-      $ map (TTC.render . Component.name) LsUpg.allComponents
+    componentsHelp = LibOA.section "COMPONENTs:" $ LibOA.table
+      [ (TTC.render (Component.name c), Component.description c)
+      | c <- LsUpg.allComponents
+      ]
 
     exitCodesHelp :: Doc
     exitCodesHelp = LibOA.section "Exit codes:" $ LibOA.table

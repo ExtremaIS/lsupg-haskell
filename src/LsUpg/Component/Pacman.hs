@@ -47,8 +47,9 @@ name = $$(TTC.valid "pacman")
 
 component :: Component
 component = Component
-    { Component.name = name
-    , Component.run  = run
+    { Component.name        = name
+    , Component.run         = run
+    , Component.description = "Arch Linux packages"
     }
 
 ------------------------------------------------------------------------------

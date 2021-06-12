@@ -47,8 +47,9 @@ import qualified Data.Vector as V
 
 data Component
   = Component
-    { name :: !Name
-    , run  :: Maybe Handle -> IO [Item]
+    { name        :: !Name
+    , run         :: Maybe Handle -> IO [Item]
+    , description :: !String
     }
 
 ------------------------------------------------------------------------------
