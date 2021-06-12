@@ -46,6 +46,7 @@ library
   exposed-modules:
       LsUpg
     , LsUpg.Component
+    , LsUpg.Component.Apk
     , LsUpg.Component.Apt
     , LsUpg.Component.Pacman
   other-modules:

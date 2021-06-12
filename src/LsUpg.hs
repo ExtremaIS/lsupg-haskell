@@ -43,6 +43,7 @@ import qualified Data.Yaml as Yaml
 -- (lsupg)
 import qualified LsUpg.Component as Component
 import LsUpg.Component (Component)
+import qualified LsUpg.Component.Apk
 import qualified LsUpg.Component.Apt
 import qualified LsUpg.Component.Pacman
 
@@ -63,7 +64,8 @@ version = "lsupg-haskell " ++ showVersion Project.version
 -- Components are processed in the defined order.
 allComponents :: [Component]
 allComponents =
-    [ LsUpg.Component.Apt.component
+    [ LsUpg.Component.Apk.component
+    , LsUpg.Component.Apt.component
     , LsUpg.Component.Pacman.component
     ]
 
