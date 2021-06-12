@@ -13,7 +13,7 @@ module LsUpg.Component.Apt
 import qualified Data.Attoparsec.ByteString.Char8 as ABS8
 
 -- https://hackage.haskell.org/package/base
-import Control.Monad (unless, when)
+import Control.Monad (unless)
 import Data.Bifunctor (first)
 import Data.Either (partitionEithers)
 import System.IO (Handle, hPutStrLn)
@@ -24,9 +24,6 @@ import qualified Data.ByteString.Lazy.Char8 as BSL8
 
 -- https://hackage.haskell.org/package/directory
 import qualified System.Directory as Dir
-
--- https://hackage.haskell.org/package/time
-import Data.Time.Clock (UTCTime)
 
 -- https://hackage.haskell.org/package/ttc
 import qualified Data.TTC as TTC
@@ -53,45 +50,21 @@ component = Component
 ------------------------------------------------------------------------------
 -- $Internal
 
-data Status
-  = NotFound
-  | Empty
-  | Updated !UTCTime
-  deriving Show
-
-------------------------------------------------------------------------------
-
 run
   :: Maybe Handle
-  -> (UTCTime -> Bool)
   -> IO [Component.Item]
-run mDebugHandle shouldUpdate = do
-    status <- getStatus
-    putDebug $ "getStatus: " ++ show status
-    case plan status of
-      Nothing -> return []
-      Just update -> do
-        when update doUpdate
+run mDebugHandle = do
+    exists <- Dir.doesDirectoryExist listsDir
+    if exists
+      then do
+        doUpdate
         getItems
+      else do
+        putDebug "not found (skipping)"
+        return []
   where
     listsDir :: FilePath
     listsDir = "/var/lib/apt/lists"
-
-    getStatus :: IO Status
-    getStatus = do
-      exists <- Dir.doesDirectoryExist listsDir
-      if exists
-        then do
-          count <- length <$> Dir.listDirectory listsDir
-          if count > 0
-            then Updated <$> Dir.getModificationTime listsDir
-            else return Empty
-        else return NotFound
-
-    plan :: Status -> Maybe Bool
-    plan NotFound             = Nothing
-    plan Empty                = Just True
-    plan (Updated updateTime) = Just $ shouldUpdate updateTime
 
     doUpdate :: IO ()
     doUpdate = do
@@ -111,10 +84,9 @@ run mDebugHandle shouldUpdate = do
         . TP.setStderr (maybe TP.nullStream TP.useHandleOpen mDebugHandle)
         $ TP.proc "apt-get" ["dist-upgrade", "-s"]
       maybe (return ()) (`BSL8.hPut` output) mDebugHandle
+      putDebug "getItems: parseItems"
       let (errs, items) = parseItems output
-      unless (null errs) $ do
-        putDebug "getItems: parseItems"
-        mapM_ putDebug errs
+      unless (null errs) $ mapM_ putDebug errs
       return items
 
     putDebug :: String -> IO ()

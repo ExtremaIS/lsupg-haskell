@@ -17,7 +17,6 @@ import Data.Maybe (catMaybes)
 import System.Environment (getExecutablePath)
 import System.Exit (ExitCode(ExitFailure, ExitSuccess), exitWith)
 import System.IO (hPutStrLn, stderr, stdout)
-import Text.Read (readMaybe)
 
 -- https://hackage.haskell.org/package/optparse-applicative
 import qualified Options.Applicative as OA
@@ -41,9 +40,6 @@ import qualified LibOA
 defaultFormat :: LsUpg.OutputFormat
 defaultFormat = LsUpg.OutputHuman
 
-defaultUpdate :: Int
-defaultUpdate = 8
-
 ------------------------------------------------------------------------------
 -- $Options
 
@@ -51,7 +47,6 @@ data Options
   = Options
     { debugOpt      :: !Bool
     , formatOpt     :: !LsUpg.OutputFormat
-    , updateOpt     :: !Int
     , dockerOpt     :: !(Maybe String)
     , componentArgs :: ![Component.Name]
     }
@@ -72,19 +67,6 @@ formatOption = OA.option (OA.eitherReader TTC.parse) $ mconcat
     , OA.help "output format"
     ]
 
-updateOption :: OA.Parser Int
-updateOption = OA.option (OA.eitherReader parse) $ mconcat
-    [ OA.long "update"
-    , OA.short 'u'
-    , OA.metavar "HOURS"
-    , OA.value defaultUpdate
-    , OA.showDefault
-    , OA.help "update if not updated within HOURS"
-    ]
-  where
-    parse :: String -> Either String Int
-    parse = maybe (Left "invalid HOURS") Right . readMaybe
-
 dockerOption :: OA.Parser String
 dockerOption = OA.strOption $ mconcat
     [ OA.long "docker"
@@ -103,7 +85,6 @@ options :: OA.Parser Options
 options = Options
     <$> debugOption
     <*> formatOption
-    <*> updateOption
     <*> optional dockerOption
     <*> componentArguments
 
@@ -124,9 +105,6 @@ runDocker image Options{..} = do
           , if formatOpt == defaultFormat
               then Nothing
               else Just ["--format", TTC.render formatOpt]
-          , if updateOpt == defaultUpdate
-              then Nothing
-              else Just ["--update", show updateOpt]
           , Just (map TTC.render componentArgs)
           ]
     when debugOpt . hPutStrLn stderr . unwords $ "[lsupg]" : "docker" : args
@@ -136,9 +114,8 @@ runDocker image Options{..} = do
 
 runAll :: Options -> IO a
 runAll Options{..} = do
-    hasUpgrades <- LsUpg.runAll
-      stdout (bool Nothing (Just stderr) debugOpt)
-      (Just . fromIntegral $ updateOpt * 3600) formatOpt
+    hasUpgrades <-
+      LsUpg.runAll stdout (bool Nothing (Just stderr) debugOpt) formatOpt
     exitWith $ bool ExitSuccess (ExitFailure 3) hasUpgrades
 
 ------------------------------------------------------------------------------
@@ -147,9 +124,8 @@ runSpecified :: Options -> IO a
 runSpecified Options{..} =
     case partitionEithers (map LsUpg.lookupComponent componentArgs) of
       ([], components) -> do
-        hasUpgrades <- LsUpg.run components
-          stdout (bool Nothing (Just stderr) debugOpt)
-          (Just . fromIntegral $ updateOpt * 3600) formatOpt
+        hasUpgrades <- LsUpg.run
+          components stdout (bool Nothing (Just stderr) debugOpt) formatOpt
         exitWith $ bool ExitSuccess (ExitFailure 3) hasUpgrades
       (names, _components) -> do
         hPutStrLn stderr $ "error: component(s) not found: " ++

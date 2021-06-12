@@ -20,7 +20,7 @@ import Control.Monad (forM)
 import Data.List (transpose)
 import Data.Maybe (fromMaybe, listToMaybe)
 import Data.Version (showVersion)
-import System.IO (Handle, hPutStrLn)
+import System.IO (Handle)
 
 -- https://hackage.haskell.org/package/bytestring
 import qualified Data.ByteString as BS
@@ -33,9 +33,6 @@ import qualified Data.Csv as CSV
 import qualified Data.Text as T
 import qualified Data.Text.Lazy as TL
 import qualified Data.Text.Lazy.IO as TLIO
-
--- https://hackage.haskell.org/package/time
-import Data.Time.Clock (NominalDiffTime, diffUTCTime, getCurrentTime)
 
 -- https://hackage.haskell.org/package/ttc
 import qualified Data.TTC as TTC
@@ -109,22 +106,12 @@ run
   :: [Component]
   -> Handle
   -> Maybe Handle
-  -> Maybe NominalDiffTime
   -> OutputFormat
   -> IO Bool
-run components outHandle mDebugHandle mUpdateDuration outputFormat = do
-    currentTime <- getCurrentTime
-    putDebug $ "run: " ++ show currentTime
-    let shouldUpdate updateTime = case mUpdateDuration of
-          Just dur -> currentTime `diffUTCTime` updateTime >= dur
-          Nothing  -> False
+run components outHandle mDebugHandle outputFormat = do
     items <- fmap concat . forM components $ \component ->
-      Component.run component mDebugHandle shouldUpdate
-    putItems items
-    return . not $ null items
-  where
-    putItems :: [Component.Item] -> IO ()
-    putItems items = case outputFormat of
+      Component.run component mDebugHandle
+    case outputFormat of
       OutputHuman -> TLIO.hPutStr outHandle $ table
         [ [ TTC.render $ Component.componentName item
           , Component.itemName item
@@ -136,18 +123,13 @@ run components outHandle mDebugHandle mUpdateDuration outputFormat = do
       OutputCSV   -> BSL.hPutStr outHandle $ CSV.encode items
       OutputJSON  -> BSL.hPutStr outHandle $ A.encode items
       OutputYAML  -> BS.hPutStr outHandle $ Yaml.encode items
-
-    putDebug :: String -> IO ()
-    putDebug = case mDebugHandle of
-      Just handle -> hPutStrLn handle . ("[lsupg] " ++)
-      Nothing     -> const $ return ()
+    return . not $ null items
 
 ------------------------------------------------------------------------------
 
 runAll
   :: Handle
   -> Maybe Handle
-  -> Maybe NominalDiffTime
   -> OutputFormat
   -> IO Bool
 runAll = run allComponents

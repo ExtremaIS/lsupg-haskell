@@ -58,7 +58,6 @@ library
     , directory
     , template-haskell
     , text
-    , time
     , ttc
     , typed-process
     , unordered-containers

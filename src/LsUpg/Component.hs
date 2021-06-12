@@ -33,9 +33,6 @@ import qualified Language.Haskell.TH.Syntax as THS
 import qualified Data.Text as T
 import Data.Text (Text)
 
--- https://hackage.haskell.org/package/time
-import Data.Time.Clock (UTCTime)
-
 -- https://hackage.haskell.org/package/ttc
 import qualified Data.TTC as TTC
 
@@ -51,7 +48,7 @@ import qualified Data.Vector as V
 data Component
   = Component
     { name :: !Name
-    , run  :: Maybe Handle -> (UTCTime -> Bool) -> IO [Item]
+    , run  :: Maybe Handle -> IO [Item]
     }
 
 ------------------------------------------------------------------------------
