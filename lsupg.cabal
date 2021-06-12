@@ -96,7 +96,8 @@ test-suite lsupg-test
   hs-source-dirs: test
   main-is: Spec.hs
   other-modules:
-      LsUpg.Component.Apt.Test
+      LsUpg.Component.Apk.Test
+    , LsUpg.Component.Apt.Test
     , LsUpg.Component.Nix.Test
   build-depends:
       base
