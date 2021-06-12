@@ -70,7 +70,6 @@ formatOption = OA.option (OA.eitherReader TTC.parse) $ mconcat
 dockerOption :: OA.Parser String
 dockerOption = OA.strOption $ mconcat
     [ OA.long "docker"
-    , OA.short 'd'
     , OA.metavar "IMAGE"
     , OA.help "Docker image"
     ]
