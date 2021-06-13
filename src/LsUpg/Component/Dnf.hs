@@ -76,8 +76,8 @@ run mDebugHandle = fmap (fromMaybe []) . runMaybeT $ do
     getItems :: MaybeT IO [Component.Item]
     getItems = do
       putDebug "getItems: dnf check-update"
-      output <- lift
-        . TP.readProcessStdout_
+      (_exitCode, output) <- lift
+        . TP.readProcessStdout
         . TP.setStdin TP.nullStream
         . TP.setStderr (maybe TP.nullStream TP.useHandleOpen mDebugHandle)
         $ TP.proc "dnf" ["check-update"]
