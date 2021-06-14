@@ -26,4 +26,3 @@ Components:
 * Static executable
     * Cabal?
     * Nix?
-* Distribution tarball

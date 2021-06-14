@@ -238,10 +238,15 @@ endif
 
 static: hr
 static: # build a static executable *
+> $(eval VERSION := $(shell \
+    grep '^version:' $(CABAL_FILE) | sed 's/^version: *//'))
 ifeq ($(MODE), cabal)
 > $(call die,"static executable requires Stack")
 else
 > @stack build --flag lsupg:static --docker
+> @mkdir -p "build"
+> @cp "$$(find "$$(find .stack-work/install -mindepth 1 -maxdepth 1 -type d | grep '[0-9[a-z]\{34\}')" -type d -name bin)/lsupg" "build"
+> @cd build && tar -Jcvf "lsupg-$(VERSION).tar.xz" "lsupg"
 endif
 .PHONY: static
 
