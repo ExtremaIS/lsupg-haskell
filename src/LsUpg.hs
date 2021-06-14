@@ -26,7 +26,7 @@ import qualified Data.Aeson as A
 -- https://hackage.haskell.org/package/base
 import Control.Monad (forM)
 import Data.List (transpose)
-import Data.Maybe (fromMaybe, listToMaybe)
+import Data.Maybe (fromMaybe)
 import Data.Version (showVersion)
 import System.IO (Handle)
 
@@ -44,6 +44,10 @@ import qualified Data.Text.Lazy.IO as TLIO
 
 -- https://hackage.haskell.org/package/ttc
 import qualified Data.TTC as TTC
+
+-- https://hackage.haskell.org/package/unodered-containers
+import qualified Data.HashMap.Strict as HashMap
+import Data.HashMap.Strict (HashMap)
 
 -- https://hackage.haskell.org/package/yaml
 import qualified Data.Yaml as Yaml
@@ -85,6 +89,13 @@ allComponents =
     , LsUpg.Component.Pacman.component
     ]
 
+-- | Map from component name to component
+allComponentsMap :: HashMap Component.Name Component
+allComponentsMap = HashMap.fromList
+    [ (Component.name component, component)
+    | component <- allComponents
+    ]
+
 ------------------------------------------------------------------------------
 -- $Types
 
@@ -117,14 +128,8 @@ instance TTC.Render OutputFormat where
 --
 -- @since 0.1.0.0
 lookupComponent :: Component.Name -> Either Component.Name Component
--- O(n) performance; improve if number of components increases
-lookupComponent name
-    = maybe (Left name) Right
-    $ listToMaybe
-        [ component
-        | component <- allComponents
-        , Component.name component == name
-        ]
+lookupComponent name =
+    maybe (Left name) Right $ HashMap.lookup name allComponentsMap
 
 ------------------------------------------------------------------------------
 

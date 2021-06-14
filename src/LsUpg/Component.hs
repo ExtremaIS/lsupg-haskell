@@ -34,6 +34,9 @@ import System.IO (Handle)
 -- https://hackage.haskell.org/package/cassava
 import qualified Data.Csv as CSV
 
+-- https://hackage.haskell.org/package/hashable
+import Data.Hashable (Hashable)
+
 -- https://hackage.haskell.org/package/template-haskell
 import qualified Language.Haskell.TH.Syntax as THS
 
@@ -108,7 +111,7 @@ instance CSV.ToRecord Item where
 -- @since 0.1.0.0
 newtype Name = Name { unName :: Text }
   deriving (Show, THS.Lift)
-  deriving newtype (Eq)
+  deriving newtype (Eq, Hashable)
 
 instance IsString Name where
   fromString = TTC.parseUnsafe
