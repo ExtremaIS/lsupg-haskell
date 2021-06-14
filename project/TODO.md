@@ -17,8 +17,6 @@ Components:
 
 ## Documentation
 
-* README
-
 ## Project
 
 * Add CI testing
