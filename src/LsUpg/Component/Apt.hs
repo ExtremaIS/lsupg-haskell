@@ -1,3 +1,11 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      : LsUpg.Component.Apt
+-- Description : apt component
+-- Copyright   : Copyright (c) 2021 Travis Cardwell
+-- License     : MIT
+------------------------------------------------------------------------------
+
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
 
@@ -43,21 +51,28 @@ import LsUpg.Component (Component(Component))
 ------------------------------------------------------------------------------
 -- $Constants
 
+-- | Component name
+--
+-- @since 0.1.0.0
 name :: Component.Name
 name = $$(TTC.valid "apt")
 
+-- | Component API
+--
+-- @since 0.1.0.0
 component :: Component
 component = Component
     { Component.name        = name
-    , Component.run         = run
     , Component.description = "Debian packages"
+    , Component.run         = run
     }
 
 ------------------------------------------------------------------------------
 -- $Internal
 
+-- | Run the component
 run
-  :: Maybe Handle
+  :: Maybe Handle  -- ^ optional debug handle
   -> IO [Component.Item]
 run mDebugHandle = fmap (fromMaybe []) . runMaybeT $ do
     listsDirExists <- lift $ Dir.doesDirectoryExist listsDir
@@ -106,6 +121,9 @@ run mDebugHandle = fmap (fromMaybe []) . runMaybeT $ do
 
 ------------------------------------------------------------------------------
 
+-- | Parse items from command output
+--
+-- This internal function is only used for testing.
 parseItems :: BSL8.ByteString -> ([String], [Component.Item])
 parseItems
     = partitionEithers

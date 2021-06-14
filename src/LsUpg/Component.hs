@@ -1,3 +1,11 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      : LsUpg.Component
+-- Description : component types
+-- Copyright   : Copyright (c) 2021 Travis Cardwell
+-- License     : MIT
+------------------------------------------------------------------------------
+
 {-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -45,15 +53,21 @@ import qualified Data.Vector as V
 ------------------------------------------------------------------------------
 -- $Types
 
+-- | Component API
+--
+-- @since 0.1.0.0
 data Component
   = Component
     { name        :: !Name
-    , run         :: Maybe Handle -> IO [Item]
     , description :: !String
+    , run         :: Maybe Handle -> IO [Item]  -- ^ optional debug handle
     }
 
 ------------------------------------------------------------------------------
 
+-- | Upgrade item
+--
+-- @since 0.1.0.0
 data Item
   = Item
     { componentName    :: !Name
@@ -89,6 +103,9 @@ instance CSV.ToRecord Item where
 
 ------------------------------------------------------------------------------
 
+-- | Component name
+--
+-- @since 0.1.0.0
 newtype Name = Name { unName :: Text }
   deriving (Show, THS.Lift)
   deriving newtype (Eq)

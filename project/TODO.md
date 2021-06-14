@@ -17,7 +17,6 @@ Components:
 
 ## Documentation
 
-* API documentation
 * README
 
 ## Project

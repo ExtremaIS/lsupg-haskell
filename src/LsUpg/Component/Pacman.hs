@@ -1,3 +1,11 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      : LsUpg.Component.Pacman
+-- Description : pacman component
+-- Copyright   : Copyright (c) 2021 Travis Cardwell
+-- License     : MIT
+------------------------------------------------------------------------------
+
 {-# LANGUAGE TemplateHaskell #-}
 
 module LsUpg.Component.Pacman
@@ -42,21 +50,28 @@ import LsUpg.Component (Component(Component))
 ------------------------------------------------------------------------------
 -- $Constants
 
+-- | Component name
+--
+-- @since 0.1.0.0
 name :: Component.Name
 name = $$(TTC.valid "pacman")
 
+-- | Component API
+--
+-- @since 0.1.0.0
 component :: Component
 component = Component
     { Component.name        = name
-    , Component.run         = run
     , Component.description = "Arch Linux packages"
+    , Component.run         = run
     }
 
 ------------------------------------------------------------------------------
 -- $Internal
 
+-- | Run the component
 run
-  :: Maybe Handle
+  :: Maybe Handle  -- ^ optional debug handle
   -> IO [Component.Item]
 run mDebugHandle = fmap (fromMaybe []) . runMaybeT $ do
     syncDirExists <- lift $ Dir.doesDirectoryExist syncDir
@@ -105,6 +120,9 @@ run mDebugHandle = fmap (fromMaybe []) . runMaybeT $ do
 
 ------------------------------------------------------------------------------
 
+-- | Parse items from command output
+--
+-- This internal function is only used for testing.
 parseItems :: BSL8.ByteString -> ([String], [Component.Item])
 parseItems = partitionEithers . map (parseLine . BSL8.toStrict) . BSL8.lines
   where

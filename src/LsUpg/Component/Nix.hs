@@ -1,3 +1,11 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      : LsUpg.Component.Nix
+-- Description : nix component
+-- Copyright   : Copyright (c) 2021 Travis Cardwell
+-- License     : MIT
+------------------------------------------------------------------------------
+
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
 
@@ -45,21 +53,28 @@ import LsUpg.Component (Component(Component))
 ------------------------------------------------------------------------------
 -- $Constants
 
+-- | Component name
+--
+-- @since 0.1.0.0
 name :: Component.Name
 name = $$(TTC.valid "nix")
 
+-- | Component API
+--
+-- @since 0.1.0.0
 component :: Component
 component = Component
     { Component.name        = name
-    , Component.run         = run
     , Component.description = "Nix packages"
+    , Component.run         = run
     }
 
 ------------------------------------------------------------------------------
 -- $Internal
 
+-- | Run the component
 run
-  :: Maybe Handle
+  :: Maybe Handle  -- ^ optional debug handle
   -> IO [Component.Item]
 run mDebugHandle = fmap (fromMaybe []) . runMaybeT $ do
     nixDirExists <- lift $ Dir.doesDirectoryExist nixDir
@@ -113,6 +128,9 @@ run mDebugHandle = fmap (fromMaybe []) . runMaybeT $ do
 
 ------------------------------------------------------------------------------
 
+-- | Parse items from command output
+--
+-- This internal function is only used for testing.
 parseItems :: BSL8.ByteString -> ([String], [Component.Item])
 parseItems
     = partitionEithers

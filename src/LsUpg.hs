@@ -1,3 +1,11 @@
+------------------------------------------------------------------------------
+-- |
+-- Module      : LsUpg
+-- Description : API
+-- Copyright   : Copyright (c) 2021 Travis Cardwell
+-- License     : MIT
+------------------------------------------------------------------------------
+
 {-# LANGUAGE LambdaCase #-}
 
 module LsUpg
@@ -56,6 +64,8 @@ import qualified Paths_lsupg as Project
 -- $Constants
 
 -- | lsupg version string (\"@lsupg-haskell X.X.X@\")
+--
+-- @since 0.1.0.0
 version :: String
 version = "lsupg-haskell " ++ showVersion Project.version
 
@@ -64,6 +74,8 @@ version = "lsupg-haskell " ++ showVersion Project.version
 -- | All components
 --
 -- Components are processed in the defined order.
+--
+-- @since 0.1.0.0
 allComponents :: [Component]
 allComponents =
     [ LsUpg.Component.Apk.component
@@ -76,6 +88,11 @@ allComponents =
 ------------------------------------------------------------------------------
 -- $Types
 
+-- | Output format
+--
+-- This sum type defines the supported output formats.
+--
+-- @since 0.1.0.0
 data OutputFormat
   = OutputHuman
   | OutputCSV
@@ -96,9 +113,10 @@ instance TTC.Render OutputFormat where
 ------------------------------------------------------------------------------
 -- $API
 
-lookupComponent
-  :: Component.Name
-  -> Either Component.Name Component
+-- | Lookup component by name
+--
+-- @since 0.1.0.0
+lookupComponent :: Component.Name -> Either Component.Name Component
 -- O(n) performance; improve if number of components increases
 lookupComponent name
     = maybe (Left name) Right
@@ -110,12 +128,15 @@ lookupComponent name
 
 ------------------------------------------------------------------------------
 
+-- | Run specified components
+--
+-- @since 0.1.0.0
 run
   :: [Component]
-  -> Handle
-  -> Maybe Handle
+  -> Handle        -- ^ output handle
+  -> Maybe Handle  -- ^ optional debug handle
   -> OutputFormat
-  -> IO Bool
+  -> IO Bool       -- ^ 'True' when upgrades are available
 run components outHandle mDebugHandle outputFormat = do
     items <- fmap concat . forM components $ \component ->
       Component.run component mDebugHandle
@@ -135,16 +156,20 @@ run components outHandle mDebugHandle outputFormat = do
 
 ------------------------------------------------------------------------------
 
+-- | Run all components
+--
+-- @since 0.1.0.0
 runAll
-  :: Handle
-  -> Maybe Handle
+  :: Handle        -- ^ output handle
+  -> Maybe Handle  -- ^ optional debug handle
   -> OutputFormat
-  -> IO Bool
+  -> IO Bool       -- ^ 'True' when upgrades are available
 runAll = run allComponents
 
 ------------------------------------------------------------------------------
 -- $Internal
 
+-- | Format a table with all columns left-justfied
 table :: [[T.Text]] -> TL.Text
 table rows = TL.unlines
     [ TL.fromStrict . T.stripEnd $ T.concat
