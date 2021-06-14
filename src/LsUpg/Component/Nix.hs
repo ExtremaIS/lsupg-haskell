@@ -121,13 +121,16 @@ parseItems
     . map BSL8.toStrict
     . BSL8.lines
   where
+    -- /^upgrading '([^']+)' to '([^']+)'$/
+    -- upgrading '{{NAME}}-{{INSTALLED}}' to '{{NAME}}-{{AVAILABLE}}'
+    -- upgrading 'nix-2.3.11' to 'nix-2.3.12'
     parseLine :: BS.ByteString -> Either String Component.Item
     parseLine = parseOrError $ do
       void $ ABS8.string "upgrading '"
       (installedName, installedVersion) <- parseNameAndVersion <$>
-        ABS8.takeTill (== '\'') <* ABS8.string "' to '"
+        ABS8.takeWhile1 (/= '\'') <* ABS8.string "' to '"
       (availableName, availableVersion) <- parseNameAndVersion <$>
-        ABS8.takeTill (== '\'') <* ABS8.char '\''
+        ABS8.takeWhile1 (/= '\'') <* ABS8.char '\''
       ABS8.endOfInput
       guard $ installedName == availableName
       return Component.Item

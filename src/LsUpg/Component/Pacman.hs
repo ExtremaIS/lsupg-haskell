@@ -108,11 +108,14 @@ run mDebugHandle = fmap (fromMaybe []) . runMaybeT $ do
 parseItems :: BSL8.ByteString -> ([String], [Component.Item])
 parseItems = partitionEithers . map (parseLine . BSL8.toStrict) . BSL8.lines
   where
+    -- /^([^ ]+) ([^ ]+) -> (.+)$/
+    -- {{Name}} {{Installed}} -> {{Available}}
+    -- pacman 5.2.2-3 -> 6.0.0-3
     parseLine :: BS.ByteString -> Either String Component.Item
     parseLine = parseOrError $ do
-      itemName <- ABS8.takeTill (== ' ') <* ABS8.char ' '
+      itemName <- ABS8.takeWhile1 (/= ' ') <* ABS8.char ' '
       installedVersion <-
-        Just <$> ABS8.takeTill (== ' ') <* ABS8.string " -> "
+        Just <$> ABS8.takeWhile1 (/= ' ') <* ABS8.string " -> "
       availableVersion <- Just <$> ABS8.takeByteString
       return Component.Item
         { Component.componentName    = name

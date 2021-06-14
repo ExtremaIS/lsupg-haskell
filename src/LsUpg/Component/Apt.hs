@@ -114,14 +114,17 @@ parseItems
     . map BSL8.toStrict
     . BSL8.lines
   where
+    -- /^Inst ([^ ]+) (?:\[([^]]+)\])? \(([^ ]+) [^)]+\)$/
+    -- Inst {{Name}} ([{{Installed}}])? ({{Available ...)
+    -- Inst liblz4-1 [1.8.3-1] (1.8.3-1+deb10u1 Debian-Security:10/stable [amd64])
     parseLine :: BS.ByteString -> Either String Component.Item
     parseLine = parseOrError $ do
       itemName <-
-        ABS8.string "Inst " *> ABS8.takeTill (== ' ') <* ABS8.char ' '
+        ABS8.string "Inst " *> ABS8.takeWhile1 (/= ' ') <* ABS8.char ' '
       installedVersion <- (ABS8.option Nothing . fmap Just)
-        (ABS8.char '[' *> ABS8.takeTill (== ']') <* ABS8.string "] ")
-      availableVersion <- Just <$> (ABS8.char '(' *> ABS8.takeTill (== ' '))
-      ABS8.takeTill (== ')') *> ABS8.char ')' *> ABS8.endOfInput
+        (ABS8.char '[' *> ABS8.takeWhile1 (/= ']') <* ABS8.string "] ")
+      availableVersion <- Just <$> (ABS8.char '(' *> ABS8.takeWhile1 (/= ' '))
+      ABS8.takeWhile1 (/= ')') *> ABS8.char ')' *> ABS8.endOfInput
       return Component.Item
         { Component.componentName    = name
         , Component.itemName         = TTC.toT itemName

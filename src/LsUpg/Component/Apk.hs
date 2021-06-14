@@ -114,13 +114,16 @@ parseItems
     . map BSL8.toStrict
     . BSL8.lines
   where
+    -- /^[^ ]+ Upgrading ([^ ]+) \(([^ ]+) -> ([^)]+)\)$/
+    -- ({{i}}/{{n}}) Upgrading {{Name}} ({{Installed}} -> {{Available}})
+    -- (1/2) Upgrading musl (1.2.2-r0 -> 1.2.2-r1)
     parseLine :: BS.ByteString -> Either String Component.Item
     parseLine = parseOrError $ do
-      void $ ABS8.takeTill (== ' ') *> ABS8.string " Upgrading "
-      itemName <- ABS8.takeTill (== ' ') <* ABS8.string " ("
+      void $ ABS8.takeWhile1 (/= ' ') *> ABS8.string " Upgrading "
+      itemName <- ABS8.takeWhile1 (/= ' ') <* ABS8.string " ("
       installedVersion <-
-        Just <$> ABS8.takeTill (== ' ') <* ABS8.string " -> "
-      availableVersion <- Just <$> ABS8.takeTill (== ')') <* ABS8.char ')'
+        Just <$> ABS8.takeWhile1 (/= ' ') <* ABS8.string " -> "
+      availableVersion <- Just <$> ABS8.takeWhile1 (/= ')') <* ABS8.char ')'
       ABS8.endOfInput
       return Component.Item
         { Component.componentName    = name

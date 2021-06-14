@@ -127,7 +127,8 @@ parseItems
     . BSL8.lines
   where
     -- /^([^.]+)\.([^ ]+) +(?:([^:]+):)?([^-]+)-([^ ]+) +[^ ]+$/
-    -- {{Name}}.{{Architecture}}  ({{Epoch}}:)?{{Version}}-{{Release}}  [^ ]+$
+    -- {{Name}}.{{Architecture}}  ({{Epoch}}:)?{{Version}}-{{Release}}  ...
+    -- coreutils.x86_64    8.32-27.fc34    updates
     parseLine :: BS.ByteString -> Either String Component.Item
     parseLine = parseOrError $ do
       -- itemName: {{Name}}.{{Architecture}}

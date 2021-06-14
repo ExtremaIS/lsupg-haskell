@@ -18,20 +18,14 @@ import qualified LsUpg.Component.Pacman as Pacman
 
 ------------------------------------------------------------------------------
 
-noneOutput :: ByteString
-noneOutput = ""
-
-testNone :: TestTree
-testNone = testCase "none" $
-    ([], []) @=? Pacman.parseItems noneOutput
+testParseItemsNone :: TestTree
+testParseItemsNone = testCase "none" $
+    ([], []) @=? Pacman.parseItems output
+  where
+    output :: ByteString
+    output = ""
 
 ------------------------------------------------------------------------------
-
-upgradeOutput :: ByteString
-upgradeOutput = BSL8.unlines
-    [ "pacman 5.2.2-3 -> 6.0.0-3"
-    , "sqlite 3.35.5-1 -> 3.35.5-2"
-    ]
 
 upgradeItems :: [Component.Item]
 upgradeItems =
@@ -49,31 +43,39 @@ upgradeItems =
         }
     ]
 
-testUpgrade :: TestTree
-testUpgrade = testCase "upgrade" $
-    ([], upgradeItems) @=? Pacman.parseItems upgradeOutput
+testParseItemsUpgrade :: TestTree
+testParseItemsUpgrade = testCase "upgrade" $
+    ([], upgradeItems) @=? Pacman.parseItems output
+  where
+    output :: ByteString
+    output = BSL8.unlines
+      [ "pacman 5.2.2-3 -> 6.0.0-3"
+      , "sqlite 3.35.5-1 -> 3.35.5-2"
+      ]
 
 ------------------------------------------------------------------------------
 
-errorOutput :: ByteString
-errorOutput = BSL8.unlines
-    [ "pacman 5.2.2-3 -> 6.0.0-3"
-    , "error invalid line"
-    , "sqlite 3.35.5-1 -> 3.35.5-2"
-    ]
-
-testError :: TestTree
-testError = testCase "error" $
-    ([err], upgradeItems) @=? Pacman.parseItems errorOutput
+testParseItemsError :: TestTree
+testParseItemsError = testCase "error" $
+    ([err], upgradeItems) @=? Pacman.parseItems output
   where
     err :: String
     err = "error parsing pacman line: error invalid line"
+
+    output :: ByteString
+    output = BSL8.unlines
+      [ "pacman 5.2.2-3 -> 6.0.0-3"
+      , "error invalid line"
+      , "sqlite 3.35.5-1 -> 3.35.5-2"
+      ]
 
 ------------------------------------------------------------------------------
 
 tests :: TestTree
 tests = testGroup "LsUpg.Component.Pacman"
-    [ testNone
-    , testUpgrade
-    , testError
+    [ testGroup "parseItems"
+        [ testParseItemsNone
+        , testParseItemsUpgrade
+        , testParseItemsError
+        ]
     ]

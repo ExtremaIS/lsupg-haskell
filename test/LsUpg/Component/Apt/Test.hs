@@ -18,33 +18,20 @@ import qualified LsUpg.Component.Apt as Apt
 
 ------------------------------------------------------------------------------
 
-noneOutput :: ByteString
-noneOutput = BSL8.unlines
-    [ "Reading package lists... Done"
-    , "Building dependency tree       "
-    , "Reading state information... Done"
-    , "Calculating upgrade... Done"
-    , "0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded."
-    ]
-
-testNone :: TestTree
-testNone = testCase "none" $
-    ([], []) @=? Apt.parseItems noneOutput
+testParseItemsNone :: TestTree
+testParseItemsNone = testCase "none" $
+    ([], []) @=? Apt.parseItems output
+  where
+    output :: ByteString
+    output = BSL8.unlines
+      [ "Reading package lists... Done"
+      , "Building dependency tree       "
+      , "Reading state information... Done"
+      , "Calculating upgrade... Done"
+      , "0 upgraded, 0 newly installed, 0 to remove and 0 not upgraded."
+      ]
 
 ------------------------------------------------------------------------------
-
-upgradeOutput :: ByteString
-upgradeOutput = BSL8.unlines
-    [ "Reading package lists... Done"
-    , "Building dependency tree       "
-    , "Reading state information... Done"
-    , "Calculating upgrade... Done"
-    , "The following packages will be upgraded:"
-    , "  liblz4-1"
-    , "1 upgraded, 0 newly installed, 0 to remove and 0 not upgraded."
-    , "Inst liblz4-1 [1.8.3-1] (1.8.3-1+deb10u1 Debian-Security:10/stable [amd64])"
-    , "Conf liblz4-1 (1.8.3-1+deb10u1 Debian-Security:10/stable [amd64])"
-    ]
 
 upgradeItem :: Component.Item
 upgradeItem = Component.Item
@@ -54,23 +41,24 @@ upgradeItem = Component.Item
     , Component.availableVersion = Just "1.8.3-1+deb10u1"
     }
 
-testUpgrade :: TestTree
-testUpgrade = testCase "upgrade" $
-    ([], [upgradeItem]) @=? Apt.parseItems upgradeOutput
+testParseItemsUpgrade :: TestTree
+testParseItemsUpgrade = testCase "upgrade" $
+    ([], [upgradeItem]) @=? Apt.parseItems output
+  where
+    output :: ByteString
+    output = BSL8.unlines
+      [ "Reading package lists... Done"
+      , "Building dependency tree       "
+      , "Reading state information... Done"
+      , "Calculating upgrade... Done"
+      , "The following packages will be upgraded:"
+      , "  liblz4-1"
+      , "1 upgraded, 0 newly installed, 0 to remove and 0 not upgraded."
+      , "Inst liblz4-1 [1.8.3-1] (1.8.3-1+deb10u1 Debian-Security:10/stable [amd64])"
+      , "Conf liblz4-1 (1.8.3-1+deb10u1 Debian-Security:10/stable [amd64])"
+      ]
 
 ------------------------------------------------------------------------------
-
-newOutput :: ByteString
-newOutput = BSL8.unlines
-    [ "Reading package lists... Done"
-    , "Building dependency tree       "
-    , "Reading state information... Done"
-    , "The following NEW packages will be installed:"
-    , "  zip"
-    , "0 upgraded, 1 newly installed, 0 to remove and 0 not upgraded."
-    , "Inst zip (3.0-11+b1 Debian:10.9/stable [amd64])"
-    , "Conf zip (3.0-11+b1 Debian:10.9/stable [amd64])"
-    ]
 
 newItem :: Component.Item
 newItem = Component.Item
@@ -80,43 +68,57 @@ newItem = Component.Item
     , Component.availableVersion = Just "3.0-11+b1"
     }
 
-testNew :: TestTree
-testNew = testCase "new" $
-    ([], [newItem]) @=? Apt.parseItems newOutput
+testParseItemsNew :: TestTree
+testParseItemsNew = testCase "new" $
+    ([], [newItem]) @=? Apt.parseItems output
+  where
+    output :: ByteString
+    output = BSL8.unlines
+      [ "Reading package lists... Done"
+      , "Building dependency tree       "
+      , "Reading state information... Done"
+      , "The following NEW packages will be installed:"
+      , "  zip"
+      , "0 upgraded, 1 newly installed, 0 to remove and 0 not upgraded."
+      , "Inst zip (3.0-11+b1 Debian:10.9/stable [amd64])"
+      , "Conf zip (3.0-11+b1 Debian:10.9/stable [amd64])"
+      ]
 
 ------------------------------------------------------------------------------
 
-errorOutput :: ByteString
-errorOutput = BSL8.unlines
-    [ "Reading package lists... Done"
-    , "Building dependency tree       "
-    , "Reading state information... Done"
-    , "Calculating upgrade... Done"
-    , "The following NEW packages will be installed:"
-    , "  zip"
-    , "The following packages will be upgraded:"
-    , "  liblz4-1"
-    , "1 upgraded, 1 newly installed, 0 to remove and 0 not upgraded."
-    , "Inst zip (3.0-11+b1 Debian:10.9/stable [amd64])"
-    , "Inst error invalid line"
-    , "Inst liblz4-1 [1.8.3-1] (1.8.3-1+deb10u1 Debian-Security:10/stable [amd64])"
-    , "Conf zip (3.0-11+b1 Debian:10.9/stable [amd64])"
-    , "Conf liblz4-1 (1.8.3-1+deb10u1 Debian-Security:10/stable [amd64])"
-    ]
-
-testError :: TestTree
-testError = testCase "error" $
-    ([err], [newItem, upgradeItem]) @=? Apt.parseItems errorOutput
+testParseItemsError :: TestTree
+testParseItemsError = testCase "error" $
+    ([err], [newItem, upgradeItem]) @=? Apt.parseItems output
   where
     err :: String
     err = "error parsing apt line: Inst error invalid line"
+
+    output :: ByteString
+    output = BSL8.unlines
+      [ "Reading package lists... Done"
+      , "Building dependency tree       "
+      , "Reading state information... Done"
+      , "Calculating upgrade... Done"
+      , "The following NEW packages will be installed:"
+      , "  zip"
+      , "The following packages will be upgraded:"
+      , "  liblz4-1"
+      , "1 upgraded, 1 newly installed, 0 to remove and 0 not upgraded."
+      , "Inst zip (3.0-11+b1 Debian:10.9/stable [amd64])"
+      , "Inst error invalid line"
+      , "Inst liblz4-1 [1.8.3-1] (1.8.3-1+deb10u1 Debian-Security:10/stable [amd64])"
+      , "Conf zip (3.0-11+b1 Debian:10.9/stable [amd64])"
+      , "Conf liblz4-1 (1.8.3-1+deb10u1 Debian-Security:10/stable [amd64])"
+      ]
 
 ------------------------------------------------------------------------------
 
 tests :: TestTree
 tests = testGroup "LsUpg.Component.Apt"
-    [ testNone
-    , testUpgrade
-    , testNew
-    , testError
+    [ testGroup "parseItems"
+        [ testParseItemsNone
+        , testParseItemsUpgrade
+        , testParseItemsNew
+        , testParseItemsError
+        ]
     ]

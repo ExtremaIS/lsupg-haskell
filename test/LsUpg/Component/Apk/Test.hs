@@ -18,23 +18,17 @@ import qualified LsUpg.Component.Apk as Apk
 
 ------------------------------------------------------------------------------
 
-noneOutput :: ByteString
-noneOutput = BSL8.unlines
-    [ "OK: 6 MiB in 14 packages"
-    ]
 
-testNone :: TestTree
-testNone = testCase "none" $
-    ([], []) @=? Apk.parseItems noneOutput
+testParseItemsNone :: TestTree
+testParseItemsNone = testCase "none" $
+    ([], []) @=? Apk.parseItems output
+  where
+    output :: ByteString
+    output = BSL8.unlines
+      [ "OK: 6 MiB in 14 packages"
+      ]
 
 ------------------------------------------------------------------------------
-
-upgradeOutput :: ByteString
-upgradeOutput = BSL8.unlines
-    [ "(1/2) Upgrading musl (1.2.2-r0 -> 1.2.2-r1)"
-    , "(2/2) Upgrading musl-utils (1.2.2-r0 -> 1.2.2-r1)"
-    , "OK: 6 MiB in 14 packages"
-    ]
 
 upgradeItems :: [Component.Item]
 upgradeItems =
@@ -52,32 +46,41 @@ upgradeItems =
         }
     ]
 
-testUpgrade :: TestTree
-testUpgrade = testCase "upgrade" $
-    ([], upgradeItems) @=? Apk.parseItems upgradeOutput
+testParseItemsUpgrade :: TestTree
+testParseItemsUpgrade = testCase "upgrade" $
+    ([], upgradeItems) @=? Apk.parseItems output
+  where
+    output :: ByteString
+    output = BSL8.unlines
+      [ "(1/2) Upgrading musl (1.2.2-r0 -> 1.2.2-r1)"
+      , "(2/2) Upgrading musl-utils (1.2.2-r0 -> 1.2.2-r1)"
+      , "OK: 6 MiB in 14 packages"
+      ]
 
 ------------------------------------------------------------------------------
 
-errorOutput :: ByteString
-errorOutput = BSL8.unlines
-    [ "(1/3) Upgrading musl (1.2.2-r0 -> 1.2.2-r1)"
-    , "(2/3) Upgrading error invalid line"
-    , "(3/3) Upgrading musl-utils (1.2.2-r0 -> 1.2.2-r1)"
-    , "OK: 6 MiB in 14 packages"
-    ]
-
-testError :: TestTree
-testError = testCase "error" $
-    ([err], upgradeItems) @=? Apk.parseItems errorOutput
+testParseItemsError :: TestTree
+testParseItemsError = testCase "error" $
+    ([err], upgradeItems) @=? Apk.parseItems output
   where
     err :: String
     err = "error parsing apk line: (2/3) Upgrading error invalid line"
+
+    output :: ByteString
+    output = BSL8.unlines
+      [ "(1/3) Upgrading musl (1.2.2-r0 -> 1.2.2-r1)"
+      , "(2/3) Upgrading error invalid line"
+      , "(3/3) Upgrading musl-utils (1.2.2-r0 -> 1.2.2-r1)"
+      , "OK: 6 MiB in 14 packages"
+      ]
 
 ------------------------------------------------------------------------------
 
 tests :: TestTree
 tests = testGroup "LsUpg.Component.Apk"
-    [ testNone
-    , testUpgrade
-    , testError
+    [ testGroup "parseItems"
+        [ testParseItemsNone
+        , testParseItemsUpgrade
+        , testParseItemsError
+        ]
     ]
