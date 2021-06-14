@@ -19,7 +19,6 @@ Components:
 
 ## Project
 
-* Add CI testing
 * Static executable
     * Cabal?
     * Nix?
