@@ -7,15 +7,16 @@ module LsUpg.Component.Dnf
   , component
     -- * Internal
   , parseItems
+  , parseInfo
   ) where
 
 -- https://hackage.haskell.org/package/attoparsec
 import qualified Data.Attoparsec.ByteString.Char8 as ABS8
 
 -- https://hackage.haskell.org/package/base
-import Control.Monad (mzero, unless)
+import Control.Monad (mzero, unless, void)
 import Data.Bifunctor (first)
-import Data.Either (partitionEithers)
+import Data.Either (fromRight, partitionEithers)
 import Data.Maybe (fromMaybe, isJust)
 import System.IO (Handle, hPutStrLn)
 
@@ -25,6 +26,10 @@ import qualified Data.ByteString.Lazy.Char8 as BSL8
 
 -- https://hackage.haskell.org/package/directory
 import qualified System.Directory as Dir
+
+-- https://hackage.haskell.org/package/text
+import qualified Data.Text as T
+import Data.Text (Text)
 
 -- https://hackage.haskell.org/package/transformers
 import Control.Monad.Trans.Class (lift)
@@ -68,7 +73,7 @@ run mDebugHandle = fmap (fromMaybe []) . runMaybeT $ do
     unless dnfProgramExists $ do
       putDebug "dnf program not found (skipping)"
       mzero
-    getItems
+    mapM getInstalledVersion =<< getItems
   where
     dnfDir :: FilePath
     dnfDir = "/var/lib/dnf"
@@ -87,6 +92,24 @@ run mDebugHandle = fmap (fromMaybe []) . runMaybeT $ do
       unless (null errs) $ mapM_ putDebug errs
       return items
 
+    getInstalledVersion :: Component.Item -> MaybeT IO Component.Item
+    getInstalledVersion item = do
+      let itemName = Component.itemName item
+          dnfName  = TTC.toS $ T.takeWhile (/= '.') itemName
+      putDebug $ "getInstalledVersion: dnf info --installed " ++ dnfName
+      output <- lift
+        . TP.readProcessStdout_
+        . TP.setStdin TP.nullStream
+        . TP.setStderr (maybe TP.nullStream TP.useHandleOpen mDebugHandle)
+        $ TP.proc "dnf" ["info", "--installed", dnfName]
+      lift $ maybe (return ()) (`BSL8.hPut` output) mDebugHandle
+      putDebug "getInstalledVersion: parseInfo"
+      return $ case lookup itemName (parseInfo output) of
+        Just installedVersion -> item
+          { Component.installedVersion = Just installedVersion
+          }
+        Nothing -> item
+
     putDebug :: String -> MaybeT IO ()
     putDebug = case mDebugHandle of
       Just handle -> lift . hPutStrLn handle . ("[lsupg:dnf] " ++)
@@ -103,11 +126,15 @@ parseItems
     . map BSL8.toStrict
     . BSL8.lines
   where
+    -- /^([^.]+)\.([^ ]+) +(?:([^:]+):)?([^-]+)-([^ ]+) +[^ ]+$/
+    -- {{Name}}.{{Architecture}}  ({{Epoch}}:)?{{Version}}-{{Release}}  [^ ]+$
     parseLine :: BS.ByteString -> Either String Component.Item
     parseLine = parseOrError $ do
-      itemName <- ABS8.takeTill (== ' ') <* ABS8.takeWhile (== ' ')
-      availableVersion <- Just <$> ABS8.takeTill (== ' ')
-      ABS8.takeWhile (== ' ') *> ABS8.takeWhile1 (/= ' ') *> ABS8.endOfInput
+      -- itemName: {{Name}}.{{Architecture}}
+      itemName <- ABS8.takeWhile1 (/= ' ') <* ABS8.takeWhile1 (== ' ')
+      -- availableVersion: ({{Epoch}}:)?{{Version}}-{{Release}}
+      availableVersion <- Just <$> ABS8.takeWhile1 (/= ' ')
+      ABS8.takeWhile1 (== ' ') *> ABS8.takeWhile1 (/= ' ') *> ABS8.endOfInput
       return Component.Item
         { Component.componentName    = name
         , Component.itemName         = TTC.toT itemName
@@ -119,3 +146,33 @@ parseItems
     parseOrError parser line
       = first (const $ "error parsing dnf line: " ++ TTC.toS line)
       $ ABS8.parseOnly parser line
+
+------------------------------------------------------------------------------
+
+parseInfo :: BSL8.ByteString -> [(Text, Text)]
+parseInfo = parseOrEmpty $ do
+    void $ ABS8.string "Installed Packages" *> ABS8.endOfLine
+    flip ABS8.sepBy ABS8.endOfLine $ do
+      itemName <- parseLineFor "Name"
+      epoch    <- ABS8.option Nothing $ Just <$> parseLineFor "Epoch"
+      version  <- parseLineFor "Version"
+      release  <- parseLineFor "Release"
+      arch     <- parseLineFor "Architecture"
+      void $ ABS8.manyTill takeRestOfLine ABS8.endOfLine
+      ABS8.endOfInput
+      return
+        ( itemName <> "." <> arch
+        , maybe "" (<> ":") epoch <> version <> "-" <> release
+        )
+  where
+    takeRestOfLine :: ABS8.Parser BS.ByteString
+    takeRestOfLine = ABS8.takeTill (== '\n') <* ABS8.endOfLine
+
+    parseLineFor :: BS.ByteString -> ABS8.Parser Text
+    parseLineFor key = fmap TTC.toT $ ABS8.string key
+      *> ABS8.takeWhile1 (== ' ')
+      *> ABS8.string ": "
+      *> takeRestOfLine
+
+    parseOrEmpty :: ABS8.Parser [a] -> BSL8.ByteString -> [a]
+    parseOrEmpty parser = fromRight [] . ABS8.parseOnly parser . TTC.toBS
