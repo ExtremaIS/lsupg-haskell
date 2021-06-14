@@ -132,7 +132,7 @@ Exit Code | Meaning
 #### Examples
 
 The `lsupg` static binary should be mounted and executed within a container.
-The `--docker` options provides an easy way to do this with a Docker
+The `--docker` option provides an easy way to do this with a Docker
 container.  For example, the following checks for upgrades in a
 [nixos/nix](https://hub.docker.com/r/nixos/nix) container:
 
@@ -143,11 +143,11 @@ apk  musl-utils  1.2.2-r0  1.2.2-r1
 nix  nix         2.3.11    2.3.12
 ```
 
-Note that `apk` packages are listed as well,as the `nixos/nix` image is built
+Note that `apk` packages are listed as well, as the `nixos/nix` image is built
 using Alpine Linux.
 
-The program can be mounted and run within a container manually as well.  For
-example, the following is equivalent to the above example:
+Alternatively, the program can be mounted and run within a container manually.
+The following is equivalent to the above example:
 
 ```
 $ docker run --rm -it \
