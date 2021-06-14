@@ -5,11 +5,12 @@
 General:
 
 * Audit/clean code
+* Add error handling?
 
 Components:
 
-* yum?
-    * Do not run if dnf already run?
+* `yum`?
+    * Do not run if `dnf` already run?
     * `yum check-update`
 
 ## Tests
@@ -18,7 +19,6 @@ Components:
 
 * API documentation
 * README
-* Manual
 
 ## Project
 
