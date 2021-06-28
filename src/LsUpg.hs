@@ -67,7 +67,7 @@ import qualified Paths_lsupg as Project
 ------------------------------------------------------------------------------
 -- $Constants
 
--- | lsupg version string (\"@lsupg-haskell X.X.X@\")
+-- | lsupg version string (\"@lsupg-haskell X.X.X.X@\")
 --
 -- @since 0.1.0.0
 version :: String
