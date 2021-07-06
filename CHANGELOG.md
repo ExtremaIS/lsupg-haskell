@@ -26,6 +26,10 @@ following conventions:
 
 ## Unreleased
 
+### Breaking
+
+* Rewrite Nix component to use `/etc/nix/packages.nix`
+
 ### Non-Breaking
 
 * Use TTC 1.1.0.1

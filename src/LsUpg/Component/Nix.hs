@@ -14,17 +14,15 @@ module LsUpg.Component.Nix
     name
   , component
     -- * Internal
-  , parseItems
+  , parsePackages
+  , resolveItems
   ) where
 
--- https://hackage.haskell.org/package/attoparsec
-import qualified Data.Attoparsec.ByteString.Char8 as ABS8
-
 -- https://hackage.haskell.org/package/base
-import Control.Monad (guard, mzero, unless, void)
-import Data.Bifunctor (bimap, first)
+import Control.Monad (guard, mzero, unless)
 import Data.Char (isDigit)
 import Data.Either (partitionEithers)
+import Data.List (sort, uncons)
 import Data.Maybe (fromMaybe, isJust)
 import System.IO (Handle, hPutStrLn)
 
@@ -36,6 +34,9 @@ import qualified Data.ByteString.Lazy.Char8 as BSL8
 -- https://hackage.haskell.org/package/directory
 import qualified System.Directory as Dir
 
+-- https://hackage.haskell.org/package/text
+import Data.Text (Text)
+
 -- https://hackage.haskell.org/package/transformers
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Maybe (MaybeT(runMaybeT))
@@ -45,6 +46,11 @@ import qualified Data.TTC as TTC
 
 -- https://hackage.haskell.org/package/typed-process
 import qualified System.Process.Typed as TP
+
+-- https://hackage.haskell.org/package/unordered-containers
+import qualified Data.HashMap.Strict as HashMap
+import Data.HashMap.Strict (HashMap)
+import qualified Data.HashSet as HashSet
 
 -- (lsupg)
 import qualified LsUpg.Component as Component
@@ -77,9 +83,9 @@ run
   :: Maybe Handle  -- ^ optional debug handle
   -> IO [Component.Item]
 run mDebugHandle = fmap (fromMaybe []) . runMaybeT $ do
-    nixDirExists <- lift $ Dir.doesDirectoryExist nixDir
-    unless nixDirExists $ do
-      putDebug $ nixDir ++ " not found (skipping)"
+    packagesNixExists <- lift $ Dir.doesFileExist packagesNixPath
+    unless packagesNixExists $ do
+      putDebug $ packagesNixPath ++ " not found (skipping)"
       mzero
     nixChannelProgramExists <- fmap isJust . lift $
       Dir.findExecutable "nix-channel"
@@ -91,10 +97,12 @@ run mDebugHandle = fmap (fromMaybe []) . runMaybeT $ do
       putDebug "nix-env not found (skipping)"
       mzero
     doUpdate
-    getItems
+    currentPackages <- getCurrentPackages
+    targetPackages <- getTargetPackages
+    return $ resolveItems currentPackages targetPackages
   where
-    nixDir :: FilePath
-    nixDir = "/nix"
+    packagesNixPath :: FilePath
+    packagesNixPath = "/etc/nix/packages.nix"
 
     doUpdate :: MaybeT IO ()
     doUpdate = do
@@ -107,64 +115,77 @@ run mDebugHandle = fmap (fromMaybe []) . runMaybeT $ do
         . TP.setStderr stream
         $ TP.proc "nix-channel" ["--update"]
 
-    getItems :: MaybeT IO [Component.Item]
-    getItems = do
-      putDebug "getItems: nix-env --upgrade --dry-run"
+    getCurrentPackages :: MaybeT IO (HashMap Text Text)
+    getCurrentPackages = do
+      putDebug "getCurrentPackages: nix-env -q"
       output <- lift
-        . TP.readProcessStderr_
+        . TP.readProcessStdout_
         . TP.setStdin TP.nullStream
-        . TP.setStdout (maybe TP.nullStream TP.useHandleOpen mDebugHandle)
-        $ TP.proc "nix-env" ["--upgrade", "--dry-run"]
+        . TP.setStderr (maybe TP.nullStream TP.useHandleOpen mDebugHandle)
+        $ TP.proc "nix-env" ["-q"]
       lift $ maybe (return ()) (`BSL8.hPut` output) mDebugHandle
-      putDebug "getItems: parseItems"
-      let (errs, items) = parseItems output
+      putDebug "getCurrentPackages: parsePackages"
+      let (errs, packages) = parsePackages output
       unless (null errs) $ mapM_ putDebug errs
-      return items
+      return packages
+
+    getTargetPackages :: MaybeT IO (HashMap Text Text)
+    getTargetPackages = do
+      putDebug $ "getTargetPackages: nix-env -qaf " ++ packagesNixPath
+      output <- lift
+        . TP.readProcessStdout_
+        . TP.setStdin TP.nullStream
+        . TP.setStderr (maybe TP.nullStream TP.useHandleOpen mDebugHandle)
+        $ TP.proc "nix-env" ["-qaf", packagesNixPath]
+      lift $ maybe (return ()) (`BSL8.hPut` output) mDebugHandle
+      putDebug "getTargetPackages: parsePackages"
+      let (errs, packages) = parsePackages output
+      unless (null errs) $ mapM_ putDebug errs
+      return packages
 
     putDebug :: String -> MaybeT IO ()
     putDebug = case mDebugHandle of
       Just handle -> lift . hPutStrLn handle . ("[lsupg:nix] " ++)
       Nothing     -> const $ return ()
+{-# ANN run ("HLint: ignore Use <$>" :: String) #-}
 
 ------------------------------------------------------------------------------
 
--- | Parse items from command output
+-- | Parse packages from command output
 --
--- This internal function is only used for testing.
-parseItems :: BSL8.ByteString -> ([String], [Component.Item])
-parseItems
-    = partitionEithers
-    . map parseLine
-    . filter (BS.isPrefixOf "upgrading ")
-    . map BSL8.toStrict
+-- This internal function is only exported for testing.
+parsePackages :: BSL8.ByteString -> ([String], HashMap Text Text)
+parsePackages
+    = fmap HashMap.fromList
+    . partitionEithers
+    . map (parseLine . BSL8.toStrict)
     . BSL8.lines
   where
-    -- /^upgrading '([^']+)' to '([^']+)'$/
-    -- upgrading '{{NAME}}-{{INSTALLED}}' to '{{NAME}}-{{AVAILABLE}}'
-    -- upgrading 'nix-2.3.11' to 'nix-2.3.12'
-    parseLine :: BS.ByteString -> Either String Component.Item
-    parseLine = parseOrError $ do
-      void $ ABS8.string "upgrading '"
-      (installedName, installedVersion) <- parseNameAndVersion <$>
-        ABS8.takeWhile1 (/= '\'') <* ABS8.string "' to '"
-      (availableName, availableVersion) <- parseNameAndVersion <$>
-        ABS8.takeWhile1 (/= '\'') <* ABS8.char '\''
-      ABS8.endOfInput
-      guard $ installedName == availableName
-      return Component.Item
+    parseLine :: BS.ByteString -> Either String (Text, Text)
+    parseLine line =
+      maybe (Left $ "error parsing nix line: " ++ TTC.toS line) Right $ do
+        -- the first part is a name part even if it begins with a digit
+        (namePart, parts) <- uncons $ BS8.split '-' line
+        let (nameParts, versionParts) =
+              break (maybe True (isDigit . fst) . BS8.uncons) parts
+        guard . not $ null versionParts
+        let joinParts = TTC.toT . BS8.intercalate "-"
+        return (joinParts (namePart : nameParts), joinParts versionParts)
+
+------------------------------------------------------------------------------
+
+-- | Resolve upgrade items
+--
+-- This internal function is only exported for testing.
+resolveItems :: HashMap Text Text -> HashMap Text Text -> [Component.Item]
+resolveItems currentPackages targetPackages =
+    [ Component.Item
         { Component.componentName    = name
-        , Component.itemName         = TTC.toT installedName
-        , Component.installedVersion = Just $ TTC.toT installedVersion
-        , Component.availableVersion = Just $ TTC.toT availableVersion
+        , Component.itemName         = itemName
+        , Component.installedVersion = HashMap.lookup itemName currentPackages
+        , Component.availableVersion = HashMap.lookup itemName targetPackages
         }
-
-    parseNameAndVersion :: BS.ByteString -> (BS.ByteString, BS.ByteString)
-    parseNameAndVersion
-      = bimap (BS8.intercalate "-") (BS8.intercalate "-")
-      . break (maybe True (isDigit . fst) . BS8.uncons)
-      . BS8.split '-'
-
-    parseOrError :: ABS8.Parser a -> BS.ByteString -> Either String a
-    parseOrError parser line
-      = first (const $ "error parsing nix line: " ++ TTC.toS line)
-      $ ABS8.parseOnly parser line
+    | itemName <- sort . HashSet.toList $ HashSet.union
+        (HashMap.keysSet currentPackages)
+        (HashMap.keysSet targetPackages)
+    ]
