@@ -7,6 +7,7 @@
 ------------------------------------------------------------------------------
 
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module LsUpg
   ( -- * Constants
@@ -54,7 +55,7 @@ import qualified Data.Yaml as Yaml
 
 -- (lsupg)
 import qualified LsUpg.Component as Component
-import LsUpg.Component (Component)
+import LsUpg.Component (Component, Options(Options, mDebugHandle))
 import qualified LsUpg.Component.Apk
 import qualified LsUpg.Component.Apt
 import qualified LsUpg.Component.Dnf
@@ -144,7 +145,7 @@ run
   -> IO Bool       -- ^ 'True' when upgrades are available
 run components outHandle mDebugHandle outputFormat = do
     items <- fmap concat . forM components $ \component ->
-      Component.run component mDebugHandle
+      Component.run component Options{..}
     case outputFormat of
       OutputHuman -> TLIO.hPutStr outHandle $ table
         [ [ TTC.render $ Component.componentName item

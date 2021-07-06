@@ -7,6 +7,7 @@
 ------------------------------------------------------------------------------
 
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module LsUpg.Component.Nix
@@ -24,7 +25,7 @@ import Data.Char (isDigit)
 import Data.Either (partitionEithers)
 import Data.List (sort, uncons)
 import Data.Maybe (fromMaybe, isJust)
-import System.IO (Handle, hPutStrLn)
+import System.IO (hPutStrLn)
 
 -- https://hackage.haskell.org/package/bytestring
 import qualified Data.ByteString as BS
@@ -54,7 +55,7 @@ import qualified Data.HashSet as HashSet
 
 -- (lsupg)
 import qualified LsUpg.Component as Component
-import LsUpg.Component (Component(Component))
+import LsUpg.Component (Component(Component), Options(Options, mDebugHandle))
 
 ------------------------------------------------------------------------------
 -- $Constants
@@ -80,9 +81,9 @@ component = Component
 
 -- | Run the component
 run
-  :: Maybe Handle  -- ^ optional debug handle
+  :: Options
   -> IO [Component.Item]
-run mDebugHandle = fmap (fromMaybe []) . runMaybeT $ do
+run Options{..} = fmap (fromMaybe []) . runMaybeT $ do
     packagesNixExists <- lift $ Dir.doesFileExist packagesNixPath
     unless packagesNixExists $ do
       putDebug $ packagesNixPath ++ " not found (skipping)"
