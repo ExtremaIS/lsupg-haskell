@@ -24,6 +24,17 @@ following conventions:
 
 [KaC]: <https://keepachangelog.com/en/1.0.0/>
 
+## 0.3.0.0 (2021-07-07)
+
+### Breaking
+
+* Rewrite Nix component to use `/etc/nix/packages.nix`
+* Add `--nix-path` option to support different configuration locations
+
+### Non-Breaking
+
+* Use TTC 1.1.0.1
+
 ## 0.2.0.0 (2021-06-25)
 
 ### Breaking

@@ -238,7 +238,7 @@ endif
 .PHONY: stan
 
 static: hr
-static: # build a static executable *
+static: # build a static executable
 > $(eval VERSION := $(shell \
     grep '^version:' $(CABAL_FILE) | sed 's/^version: *//'))
 ifeq ($(MODE), cabal)

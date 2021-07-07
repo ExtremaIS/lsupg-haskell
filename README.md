@@ -75,6 +75,8 @@ Available options:
   --debug                  show debug output
   -f,--format FORMAT       output format (default: human)
   --docker IMAGE           Docker image
+  --nix-path PATH          check Nix upgrades against PATH (default:
+                           /etc/nix/packages.nix)
   COMPONENT ...            components (default: all)
 ```
 
@@ -89,6 +91,11 @@ Component | Items
 `dnf`     | Fedora packages
 `nix`     | Nix packages
 `pacman`  | Arch Linux packages
+
+Upgrades to Nix packages must be done using attribute paths, specified in a
+Nix configuration file.  The `/etc/nix/packages.nix` file is used by default,
+but a custom file can be specified using the `--nix-path` option.  Note that
+upgrading using `nix-env -u` is fundamentally broken and should never be done.
 
 #### Output
 
@@ -135,17 +142,16 @@ Exit Code | Meaning
 The `lsupg` static binary should be mounted and executed within a container.
 The `--docker` option provides an easy way to do this with a Docker
 container.  For example, the following checks for upgrades in a
-[nixos/nix](https://hub.docker.com/r/nixos/nix) container:
+[debian](https://hub.docker.com/_/debian) container:
 
 ```
-$ ./lsupg --docker nixos/nix:latest
-apk  musl        1.2.2-r0  1.2.2-r1
-apk  musl-utils  1.2.2-r0  1.2.2-r1
-nix  nix         2.3.11    2.3.12
+$ ./lsupg --docker debian:buster
+apt  base-files   10.3+deb10u9     10.3+deb10u10
+apt  libgcrypt20  1.8.4-5          1.8.4-5+deb10u1
+apt  libhogweed4  3.4.1-1          3.4.1-1+deb10u1
+apt  libgnutls30  3.6.7-4+deb10u6  3.6.7-4+deb10u7
+apt  liblz4-1     1.8.3-1          1.8.3-1+deb10u1
 ```
-
-Note that `apk` packages are listed as well, as the `nixos/nix` image is built
-using Alpine Linux.
 
 Alternatively, the program can be mounted and run within a container manually.
 The following is equivalent to the above example:
@@ -154,11 +160,13 @@ The following is equivalent to the above example:
 $ docker run --rm -it \
   -u root \
   -v "$(pwd)/lsupg:/usr/local/bin/lsupg:ro" \
-  nixos/nix:latest \
+  debian:buster \
   /usr/local/bin/lsupg
-apk  musl        1.2.2-r0  1.2.2-r1
-apk  musl-utils  1.2.2-r0  1.2.2-r1
-nix  nix         2.3.11    2.3.12
+apt  base-files   10.3+deb10u9     10.3+deb10u10
+apt  libgcrypt20  1.8.4-5          1.8.4-5+deb10u1
+apt  libhogweed4  3.4.1-1          3.4.1-1+deb10u1
+apt  libgnutls30  3.6.7-4+deb10u6  3.6.7-4+deb10u7
+apt  liblz4-1     1.8.3-1          1.8.3-1+deb10u1
 ```
 
 Note that the mount is read-only and the program must be run as a user that

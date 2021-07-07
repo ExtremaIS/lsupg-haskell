@@ -1,5 +1,5 @@
 name:           lsupg
-version:        0.2.0.0
+version:        0.3.0.0
 category:       Utils
 synopsis:       list items in a container that can be upgraded
 description:
@@ -107,5 +107,7 @@ test-suite lsupg-test
     , lsupg
     , tasty >=1.2 && <1.5
     , tasty-hunit >=0.10 && <0.11
+    , text
+    , unordered-containers
   default-language: Haskell2010
   ghc-options: -Wall -threaded -rtsopts -with-rtsopts=-N

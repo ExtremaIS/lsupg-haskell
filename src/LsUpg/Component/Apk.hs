@@ -7,6 +7,7 @@
 ------------------------------------------------------------------------------
 
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module LsUpg.Component.Apk
@@ -25,7 +26,7 @@ import Control.Monad (mzero, unless, void)
 import Data.Bifunctor (first)
 import Data.Either (partitionEithers)
 import Data.Maybe (fromMaybe, isJust)
-import System.IO (Handle, hPutStrLn)
+import System.IO (hPutStrLn)
 
 -- https://hackage.haskell.org/package/bytestring
 import qualified Data.ByteString as BS
@@ -46,7 +47,7 @@ import qualified System.Process.Typed as TP
 
 -- (lsupg)
 import qualified LsUpg.Component as Component
-import LsUpg.Component (Component(Component))
+import LsUpg.Component (Component(Component), Options(Options, mDebugHandle))
 
 ------------------------------------------------------------------------------
 -- $Constants
@@ -72,9 +73,9 @@ component = Component
 
 -- | Run the component
 run
-  :: Maybe Handle  -- ^ optional debug handle
+  :: Options
   -> IO [Component.Item]
-run mDebugHandle = fmap (fromMaybe []) . runMaybeT $ do
+run Options{..} = fmap (fromMaybe []) . runMaybeT $ do
     apkDirExists <- lift $ Dir.doesDirectoryExist apkDir
     unless apkDirExists $ do
       putDebug $ apkDir ++ " not found (skipping)"

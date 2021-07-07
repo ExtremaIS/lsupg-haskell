@@ -69,7 +69,7 @@ in
     root = gitIgnore [./.gitignore] ./.;
     name = "lsupg";
     source-overrides = {
-      ttc = githubTagTarball "ExtremaIS" "ttc-haskell" "ttc-haskell-1.1.0.0";
+      ttc = githubTagTarball "ExtremaIS" "ttc-haskell" "ttc-haskell-1.1.0.1";
     };
     modifier = drv:
       if isShell

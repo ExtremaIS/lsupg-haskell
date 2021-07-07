@@ -15,6 +15,7 @@
 module LsUpg.Component
   ( -- * Types
     Component(..)
+  , Options(..)
   , Item(..)
   , Name
   ) where
@@ -58,12 +59,23 @@ import qualified Data.Vector as V
 
 -- | Component API
 --
--- @since 0.1.0.0
+-- @since 0.3.0.0
 data Component
   = Component
     { name        :: !Name
     , description :: !String
-    , run         :: Maybe Handle -> IO [Item]  -- ^ optional debug handle
+    , run         :: Options -> IO [Item]
+    }
+
+------------------------------------------------------------------------------
+
+-- | Component options
+--
+-- @since 0.3.0.0
+data Options
+  = Options
+    { mDebugHandle :: !(Maybe Handle)
+    , mNixPath     :: !(Maybe FilePath)
     }
 
 ------------------------------------------------------------------------------
