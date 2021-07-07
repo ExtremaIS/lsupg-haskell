@@ -29,6 +29,7 @@ following conventions:
 ### Breaking
 
 * Rewrite Nix component to use `/etc/nix/packages.nix`
+* Add `--nix-path` option to support different configuration locations
 
 ### Non-Breaking
 

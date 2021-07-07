@@ -30,6 +30,7 @@ import qualified System.Process.Typed as TP
 -- (lsupg)
 import qualified LsUpg
 import qualified LsUpg.Component as Component
+import LsUpg.Component.Nix (defaultNixPath)
 
 -- (lsupg:executable)
 import qualified LibOA
@@ -48,6 +49,7 @@ data Options
     { debugOpt      :: !Bool
     , formatOpt     :: !LsUpg.OutputFormat
     , dockerOpt     :: !(Maybe String)
+    , nixPathOpt    :: !(Maybe FilePath)
     , componentArgs :: ![Component.Name]
     }
 
@@ -74,6 +76,14 @@ dockerOption = OA.strOption $ mconcat
     , OA.help "Docker image"
     ]
 
+nixPathOption :: OA.Parser FilePath
+nixPathOption = OA.strOption $ mconcat
+    [ OA.long "nix-path"
+    , OA.metavar "PATH"
+    , OA.help $
+        "check Nix upgrades against PATH (default: " ++ defaultNixPath ++ ")"
+    ]
+
 componentArguments :: OA.Parser [Component.Name]
 componentArguments = many . OA.argument (OA.eitherReader TTC.parse) $ mconcat
     [ OA.metavar "COMPONENT ..."
@@ -85,6 +95,7 @@ options = Options
     <$> debugOption
     <*> formatOption
     <*> optional dockerOption
+    <*> optional nixPathOption
     <*> componentArguments
 
 ------------------------------------------------------------------------------
@@ -101,6 +112,7 @@ runDocker image Options{..} = do
               , "/usr/local/bin/lsupg"
               ]
           , if debugOpt then Just ["--debug"] else Nothing
+          , (\nixPath -> ["--nix-path", nixPath]) <$> nixPathOpt
           , if formatOpt == defaultFormat
               then Nothing
               else Just ["--format", TTC.render formatOpt]
@@ -113,8 +125,8 @@ runDocker image Options{..} = do
 
 runAll :: Options -> IO a
 runAll Options{..} = do
-    hasUpgrades <-
-      LsUpg.runAll stdout (bool Nothing (Just stderr) debugOpt) formatOpt
+    let mDebugHandle = bool Nothing (Just stderr) debugOpt
+    hasUpgrades <- LsUpg.runAll stdout mDebugHandle nixPathOpt formatOpt
     exitWith $ bool ExitSuccess (ExitFailure 3) hasUpgrades
 
 ------------------------------------------------------------------------------
@@ -123,8 +135,9 @@ runSpecified :: Options -> IO a
 runSpecified Options{..} =
     case partitionEithers (map LsUpg.lookupComponent componentArgs) of
       ([], components) -> do
-        hasUpgrades <- LsUpg.run
-          components stdout (bool Nothing (Just stderr) debugOpt) formatOpt
+        let mDebugHandle = bool Nothing (Just stderr) debugOpt
+        hasUpgrades <-
+          LsUpg.run components stdout mDebugHandle nixPathOpt formatOpt
         exitWith $ bool ExitSuccess (ExitFailure 3) hasUpgrades
       (names, _components) -> do
         hPutStrLn stderr $ "error: component(s) not found: " ++

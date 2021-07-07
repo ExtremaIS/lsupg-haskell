@@ -75,7 +75,7 @@ data Component
 data Options
   = Options
     { mDebugHandle :: !(Maybe Handle)
-    -- , mNixPath     :: !(Maybe FilePath)
+    , mNixPath     :: !(Maybe FilePath)
     }
 
 ------------------------------------------------------------------------------

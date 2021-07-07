@@ -55,7 +55,7 @@ import qualified Data.Yaml as Yaml
 
 -- (lsupg)
 import qualified LsUpg.Component as Component
-import LsUpg.Component (Component, Options(Options, mDebugHandle))
+import LsUpg.Component (Component, Options(Options, mDebugHandle, mNixPath))
 import qualified LsUpg.Component.Apk
 import qualified LsUpg.Component.Apt
 import qualified LsUpg.Component.Dnf
@@ -139,11 +139,12 @@ lookupComponent name =
 -- @since 0.1.0.0
 run
   :: [Component]
-  -> Handle        -- ^ output handle
-  -> Maybe Handle  -- ^ optional debug handle
+  -> Handle          -- ^ output handle
+  -> Maybe Handle    -- ^ optional debug handle
+  -> Maybe FilePath  -- ^ optional Nix path
   -> OutputFormat
-  -> IO Bool       -- ^ 'True' when upgrades are available
-run components outHandle mDebugHandle outputFormat = do
+  -> IO Bool         -- ^ 'True' when upgrades are available
+run components outHandle mDebugHandle mNixPath outputFormat = do
     items <- fmap concat . forM components $ \component ->
       Component.run component Options{..}
     case outputFormat of
@@ -166,10 +167,11 @@ run components outHandle mDebugHandle outputFormat = do
 --
 -- @since 0.1.0.0
 runAll
-  :: Handle        -- ^ output handle
-  -> Maybe Handle  -- ^ optional debug handle
+  :: Handle          -- ^ output handle
+  -> Maybe Handle    -- ^ optional debug handle
+  -> Maybe FilePath  -- ^ optional Nix path
   -> OutputFormat
-  -> IO Bool       -- ^ 'True' when upgrades are available
+  -> IO Bool         -- ^ 'True' when upgrades are available
 runAll = run allComponents
 
 ------------------------------------------------------------------------------

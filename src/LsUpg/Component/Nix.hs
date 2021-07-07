@@ -14,6 +14,7 @@ module LsUpg.Component.Nix
   ( -- * Constants
     name
   , component
+  , defaultNixPath
     -- * Internal
   , parsePackages
   , resolveItems
@@ -55,7 +56,9 @@ import qualified Data.HashSet as HashSet
 
 -- (lsupg)
 import qualified LsUpg.Component as Component
-import LsUpg.Component (Component(Component), Options(Options, mDebugHandle))
+import LsUpg.Component
+  ( Component(Component), Options(Options, mDebugHandle, mNixPath)
+  )
 
 ------------------------------------------------------------------------------
 -- $Constants
@@ -76,6 +79,12 @@ component = Component
     , Component.run         = run
     }
 
+-- | Default Nix path
+--
+-- @since 0.2.0.0
+defaultNixPath :: FilePath
+defaultNixPath = "/etc/nix/packages.nix"
+
 ------------------------------------------------------------------------------
 -- $Internal
 
@@ -84,9 +93,10 @@ run
   :: Options
   -> IO [Component.Item]
 run Options{..} = fmap (fromMaybe []) . runMaybeT $ do
-    packagesNixExists <- lift $ Dir.doesFileExist packagesNixPath
-    unless packagesNixExists $ do
-      putDebug $ packagesNixPath ++ " not found (skipping)"
+    let nixPath = fromMaybe defaultNixPath mNixPath
+    nixPathExists <- lift $ Dir.doesFileExist nixPath
+    unless nixPathExists $ do
+      putDebug $ nixPath ++ " not found (skipping)"
       mzero
     nixChannelProgramExists <- fmap isJust . lift $
       Dir.findExecutable "nix-channel"
@@ -99,12 +109,9 @@ run Options{..} = fmap (fromMaybe []) . runMaybeT $ do
       mzero
     doUpdate
     currentPackages <- getCurrentPackages
-    targetPackages <- getTargetPackages
+    targetPackages <- getTargetPackages nixPath
     return $ resolveItems currentPackages targetPackages
   where
-    packagesNixPath :: FilePath
-    packagesNixPath = "/etc/nix/packages.nix"
-
     doUpdate :: MaybeT IO ()
     doUpdate = do
       putDebug "doUpdate: nix-channel --update"
@@ -130,14 +137,14 @@ run Options{..} = fmap (fromMaybe []) . runMaybeT $ do
       unless (null errs) $ mapM_ putDebug errs
       return packages
 
-    getTargetPackages :: MaybeT IO (HashMap Text Text)
-    getTargetPackages = do
-      putDebug $ "getTargetPackages: nix-env -qaf " ++ packagesNixPath
+    getTargetPackages :: FilePath -> MaybeT IO (HashMap Text Text)
+    getTargetPackages nixPath = do
+      putDebug $ "getTargetPackages: nix-env -qaf " ++ nixPath
       output <- lift
         . TP.readProcessStdout_
         . TP.setStdin TP.nullStream
         . TP.setStderr (maybe TP.nullStream TP.useHandleOpen mDebugHandle)
-        $ TP.proc "nix-env" ["-qaf", packagesNixPath]
+        $ TP.proc "nix-env" ["-qaf", nixPath]
       lift $ maybe (return ()) (`BSL8.hPut` output) mDebugHandle
       putDebug "getTargetPackages: parsePackages"
       let (errs, packages) = parsePackages output
