@@ -59,7 +59,7 @@ import qualified Data.Vector as V
 
 -- | Component API
 --
--- @since 0.2.0.0
+-- @since 0.3.0.0
 data Component
   = Component
     { name        :: !Name
@@ -71,7 +71,7 @@ data Component
 
 -- | Component options
 --
--- @since 0.2.0.0
+-- @since 0.3.0.0
 data Options
   = Options
     { mDebugHandle :: !(Maybe Handle)

@@ -71,7 +71,7 @@ name = $$(TTC.valid "nix")
 
 -- | Component API
 --
--- @since 0.1.0.0
+-- @since 0.3.0.0
 component :: Component
 component = Component
     { Component.name        = name
@@ -81,7 +81,7 @@ component = Component
 
 -- | Default Nix path
 --
--- @since 0.2.0.0
+-- @since 0.3.0.0
 defaultNixPath :: FilePath
 defaultNixPath = "/etc/nix/packages.nix"
 

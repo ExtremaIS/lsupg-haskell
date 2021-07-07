@@ -136,7 +136,7 @@ lookupComponent name =
 
 -- | Run specified components
 --
--- @since 0.1.0.0
+-- @since 0.3.0.0
 run
   :: [Component]
   -> Handle          -- ^ output handle
@@ -165,7 +165,7 @@ run components outHandle mDebugHandle mNixPath outputFormat = do
 
 -- | Run all components
 --
--- @since 0.1.0.0
+-- @since 0.3.0.0
 runAll
   :: Handle          -- ^ output handle
   -> Maybe Handle    -- ^ optional debug handle
