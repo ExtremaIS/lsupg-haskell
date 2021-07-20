@@ -1,10 +1,7 @@
-resolver: lts-18.1
+resolver: lts-18.3
 
 packages:
   - .
-
-extra-deps:
-  - ttc-1.1.0.1
 
 docker:
   enable: false
