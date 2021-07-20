@@ -178,15 +178,15 @@ main = do
       $ [minBound ..]
 
     componentsHelp :: Doc
-    componentsHelp = LibOA.section "COMPONENTs:" $ LibOA.table
-      [ (TTC.render (Component.name c), Component.description c)
+    componentsHelp = LibOA.section "COMPONENTs:" $ LibOA.table_ 2
+      [ [TTC.render (Component.name c), Component.description c]
       | c <- LsUpg.allComponents
       ]
 
     exitCodesHelp :: Doc
-    exitCodesHelp = LibOA.section "Exit codes:" $ LibOA.table
-      [ ("0", "no upgrades available")
-      , ("1", "program error")
-      , ("2", "program usage error")
-      , ("3", "one or more upgrades available")
+    exitCodesHelp = LibOA.section "Exit codes:" $ LibOA.table_ 2
+      [ ["0", "no upgrades available"]
+      , ["1", "program error"]
+      , ["2", "program usage error"]
+      , ["3", "one or more upgrades available"]
       ]
