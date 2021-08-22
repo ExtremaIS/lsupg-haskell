@@ -270,8 +270,8 @@ endif
 test-all: # run tests for all configured Stackage releases
 > @command -v hr >/dev/null 2>&1 && hr "stack-8.8.4.yaml" || true
 > @make test CONFIG=stack-8.8.4.yaml
-> @command -v hr >/dev/null 2>&1 && hr "stack-8.10.4.yaml" || true
-> @make test CONFIG=stack-8.10.4.yaml
+> @command -v hr >/dev/null 2>&1 && hr "stack-8.10.6.yaml" || true
+> @make test CONFIG=stack-8.10.6.yaml
 > @command -v hr >/dev/null 2>&1 && hr "stack-9.0.1.yaml" || true
 > @make test CONFIG=stack-9.0.1.yaml
 .PHONY: test-all
