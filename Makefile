@@ -1,19 +1,15 @@
 ##############################################################################
 # Project configuration
 
-PACKAGE    := lsupg
-CABAL_FILE := $(PACKAGE).cabal
-PROJECT    := $(PACKAGE)-haskell
+PACKAGE     := lsupg
+CABAL_FILE  := $(PACKAGE).cabal
+PROJECT     := $(PACKAGE)-haskell
+EXECUTABLES := lsupg
 
-MAINTAINER_NAME  = Travis Cardwell
-MAINTAINER_EMAIL = travis.cardwell@extrema.is
-
-DESTDIR     ?=
-PREFIX      ?= /usr/local
-bindir      ?= $(DESTDIR)/$(PREFIX)/bin
-datarootdir ?= $(DESTDIR)/$(PREFIX)/share
-docdir      ?= $(datarootdir)/doc/$(PROJECT)
-man1dir     ?= $(datarootdir)/man/man1
+STACK_TEST_CONFIGS += stack-8.8.4.yaml
+STACK_TEST_CONFIGS += stack-8.10.7.yaml
+STACK_TEST_CONFIGS += stack-9.0.1.yaml
+STACK_TEST_CONFIGS += stack-9.2.1.yaml
 
 ##############################################################################
 # Make configuration
@@ -73,6 +69,11 @@ endef
 
 define hs_files
   find . -not -path '*/\.*' -type f -name '*.hs'
+endef
+
+define newline
+
+
 endef
 
 ##############################################################################
@@ -169,10 +170,12 @@ man: # build man page
 > $(eval VERSION := $(shell \
     grep '^version:' $(CABAL_FILE) | sed 's/^version: *//'))
 > $(eval DATE := $(shell date --rfc-3339=date))
-> @pandoc -s -t man -o doc/lsupg.1 \
->   --variable header="lsupg Manual" \
->   --variable footer="$(PROJECT) $(VERSION) ($(DATE))" \
->   doc/lsupg.1.md
+> $(foreach EXE,$(EXECUTABLES), \
+    @pandoc -s -t man -o doc/$(EXE).1 \
+      --variable header="$(EXE) Manual" \
+      --variable footer="$(PROJECT) $(VERSION) ($(DATE))" \
+      doc/$(EXE).1.md $(newline) \
+  )
 .PHONY: man
 
 recent: # show N most recently modified files
@@ -248,7 +251,7 @@ static: # build a static executable
 > $(eval VERSION := $(shell \
     grep '^version:' $(CABAL_FILE) | sed 's/^version: *//'))
 ifeq ($(MODE), cabal)
-> $(call die,"static executable requires Stack")
+> $(error static executable requires Stack)
 else
 > @stack build --flag lsupg:static --docker
 > @mkdir -p "build"
@@ -275,21 +278,17 @@ endif
 
 test-all: # run tests for all configured Stackage releases
 ifeq ($(MODE), cabal)
-> $(call die,"test-all not supported in CABAL mode")
+> $(error test-all not supported in CABAL mode)
 endif
-> @command -v hr >/dev/null 2>&1 && hr "stack-8.8.4.yaml" || true
-> @make test CONFIG=stack-8.8.4.yaml
-> @command -v hr >/dev/null 2>&1 && hr "stack-8.10.7.yaml" || true
-> @make test CONFIG=stack-8.10.7.yaml
-> @command -v hr >/dev/null 2>&1 && hr "stack-9.0.1.yaml" || true
-> @make test CONFIG=stack-9.0.1.yaml
-> @command -v hr >/dev/null 2>&1 && hr "stack-9.2.1.yaml" || true
-> @make test CONFIG=stack-9.2.1.yaml
+> $(foreach CONFIG,$(STACK_TEST_CONFIGS), \
+    @command -v hr >/dev/null 2>&1 && hr $(CONFIG) || true $(newline) \
+    @make test CONFIG=$(CONFIG) $(newline) \
+  )
 .PHONY: test-all
 
 test-nightly: # run tests for the latest Stackage nightly release
 ifeq ($(MODE), cabal)
-> $(call die,"test-nightly not supported in CABAL mode")
+> $(error test-nightly not supported in CABAL mode)
 endif
 > @make test RESOLVER=nightly
 .PHONY: test-nightly
