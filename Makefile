@@ -8,7 +8,7 @@ EXECUTABLES := lsupg
 
 STACK_TEST_CONFIGS += stack-8.8.4.yaml
 STACK_TEST_CONFIGS += stack-8.10.7.yaml
-STACK_TEST_CONFIGS += stack-9.0.1.yaml
+STACK_TEST_CONFIGS += stack-9.0.2.yaml
 STACK_TEST_CONFIGS += stack-9.2.1.yaml
 
 ##############################################################################
