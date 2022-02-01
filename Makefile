@@ -75,6 +75,11 @@ define die
   (echo "error: $(1)" ; false)
 endef
 
+define get_version
+$(shell grep '^version:' $(if $(origin 1) == undefined,$(CABAL_FILE),$(1)) \
+        | sed 's/^version: *//')
+endef
+
 define hs_files
   find . -not -path '*/\.*' -type f -name '*.hs'
 endef
@@ -216,8 +221,7 @@ source-git: # create source tarball of git TREE
     | wc -l))
 > @test "$(UNTRACKED)" = "0" \
 >   || echo "WARNING: Not including untracked files!" >&2
-> $(eval VERSION := $(shell \
-    grep '^version:' $(CABAL_FILE) | sed 's/^version: *//'))
+> $(eval VERSION := $(call get_version))
 > @mkdir -p build
 > @git archive --format=tar --prefix=$(PROJECT)-$(VERSION)/ $(TREE) \
 >   | xz \
@@ -233,8 +237,7 @@ source-tar: # create source tarball using tar
     | wc -l))
 > @test "$(UNTRACKED)" = "0" \
 >   || echo "WARNING: Including untracked files!" >&2
-> $(eval VERSION := $(shell \
-    grep '^version:' $(CABAL_FILE) | sed 's/^version: *//'))
+> $(eval VERSION := $(call get_version))
 > @mkdir -p build
 > @sed -e 's,^/,./,' -e 's,/$$,,' .gitignore > build/.gitignore
 > @tar \
@@ -259,8 +262,7 @@ endif
 
 static: hr
 static: # build a static executable
-> $(eval VERSION := $(shell \
-    grep '^version:' $(CABAL_FILE) | sed 's/^version: *//'))
+> $(eval VERSION := $(call get_version))
 ifeq ($(MODE), cabal)
 > $(error static not supported in CABAL mode)
 else
@@ -319,5 +321,5 @@ todo: # search for TODO items
 .PHONY: todo
 
 version: # show current version
-> @grep '^version:' $(CABAL_FILE) | sed 's/^version: */$(PROJECT) /'
+> @echo "$(PROJECT) $(call get_version)"
 .PHONY: version
