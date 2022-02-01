@@ -182,18 +182,6 @@ hssloc: # count lines of Haskell source
 > @$(call hs_files) | xargs wc -l | tail -n 1 | sed 's/^ *\([0-9]*\).*$$/\1/'
 .PHONY: hssloc
 
-man: # build man page
-> $(eval VERSION := $(shell \
-    grep '^version:' $(CABAL_FILE) | sed 's/^version: *//'))
-> $(eval DATE := $(shell date --rfc-3339=date))
-> $(foreach EXE,$(EXECUTABLES), \
-    @pandoc -s -t man -o doc/$(EXE).1 \
-      --variable header="$(EXE) Manual" \
-      --variable footer="$(PROJECT) $(VERSION) ($(DATE))" \
-      doc/$(EXE).1.md $(newline) \
-  )
-.PHONY: man
-
 recent: # show N most recently modified files
 > $(eval N := "10")
 > @find . -not -path '*/\.*' -type f -printf '%T+ %p\n' \
