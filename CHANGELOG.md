@@ -30,6 +30,7 @@ following conventions:
 
 * Bump `text` dependency version upper bound
 * Bump `hashable` dependency version upper bound
+* Bump `optparse-applicative` dependency version upper bound
 
 ## 0.3.0.0 (2021-07-07)
 
