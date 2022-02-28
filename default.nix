@@ -10,7 +10,7 @@
 #
 #     $ nix-build --argstr compiler ghc901
 
-{ # This string argument specifies the compiler (example: "ghc8104").  When
+{ # This string argument specifies the compiler (example: "ghc8107").  When
   # not specified, the default compiler (configured below) is used.
   compiler ? null
   # This path argument specifies the packages to use.  When not specified, a
@@ -26,13 +26,13 @@
 let
 
   # This string defines the default compiler version.
-  defaultCompiler = "ghc8104";
+  defaultCompiler = "ghc8107";
 
   # This set defines working revisions for supported compiler versions.
   nixpkgsRevs = {
-    # ghc901  = "4d4fdc329285e0d0c1c1a2b65947d651b8ba6b29"; NOTE text-short fails
-    ghc8104 = "c92ca95afb5043bc6faa0d526460584eccff2277";
-    ghc884  = "c92ca95afb5043bc6faa0d526460584eccff2277";
+    ghc901  = "b7d0ebd8f898c9a4b55653d2fefd12319f1bc3cf";
+    ghc8107 = "b7d0ebd8f898c9a4b55653d2fefd12319f1bc3cf";
+    ghc884  = "b7d0ebd8f898c9a4b55653d2fefd12319f1bc3cf";
   };
 
   # This function fetches the specified nixpkgs revision.
@@ -69,7 +69,10 @@ in
     root = gitIgnore [./.gitignore] ./.;
     name = "lsupg";
     source-overrides = {
-      ttc = githubTagTarball "ExtremaIS" "ttc-haskell" "ttc-haskell-1.1.0.1";
+      ttc = githubTagTarball "ExtremaIS" "ttc-haskell" "ttc-haskell-1.1.0.2";
+    };
+    overrides = self: super: {
+      text-short = pkgs.haskell.lib.dontCheck super.text-short;
     };
     modifier = drv:
       if isShell

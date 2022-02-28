@@ -16,7 +16,7 @@
         * [Examples](#examples)
 * [Project](#project)
     * [Links](#links)
-    * [Releases](#releases)
+    * [Tags](#tags)
     * [Contribution](#contribution)
     * [License](#license)
 
@@ -182,7 +182,7 @@ parsing is done correctly.
 
 * GitHub: <https://github.com/ExtremaIS/lsupg-haskell>
 
-### Releases
+### Tags
 
 All releases are tagged in the `main` branch.  Release tags are signed using
 the

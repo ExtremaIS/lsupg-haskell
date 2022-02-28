@@ -1,20 +1,22 @@
 ##############################################################################
 # Project configuration
 
-PACKAGE    := lsupg
-BINARY     := $(PACKAGE)
-CABAL_FILE := $(PACKAGE).cabal
-PROJECT    := $(PACKAGE)-haskell
+PACKAGE     := lsupg
+CABAL_FILE  := $(PACKAGE).cabal
+PROJECT     := $(PACKAGE)-haskell
+EXECUTABLES := lsupg
 
-MAINTAINER_NAME  = Travis Cardwell
-MAINTAINER_EMAIL = travis.cardwell@extrema.is
+MODE ?= stack
 
-DESTDIR     ?=
-PREFIX      ?= /usr/local
-bindir      ?= $(DESTDIR)/$(PREFIX)/bin
-datarootdir ?= $(DESTDIR)/$(PREFIX)/share
-docdir      ?= $(datarootdir)/doc/$(PROJECT)
-man1dir     ?= $(datarootdir)/man/man1
+CABAL_TEST_GHC_VERSIONS += 8.8.4
+CABAL_TEST_GHC_VERSIONS += 8.10.7
+CABAL_TEST_GHC_VERSIONS += 9.0.2
+CABAL_TEST_GHC_VERSIONS += 9.2.1
+
+STACK_TEST_CONFIGS += stack-8.8.4.yaml
+STACK_TEST_CONFIGS += stack-8.10.7.yaml
+STACK_TEST_CONFIGS += stack-9.0.2.yaml
+STACK_TEST_CONFIGS += stack-9.2.1.yaml
 
 ##############################################################################
 # Make configuration
@@ -32,24 +34,30 @@ MAKEFLAGS += --warn-undefined-variables
 
 .DEFAULT_GOAL := build
 
-NIX_PATH_ARGS :=
-ifneq ($(origin STACK_NIX_PATH), undefined)
-  NIX_PATH_ARGS := "--nix-path=$(STACK_NIX_PATH)"
-endif
-
-RESOLVER_ARGS :=
-ifneq ($(origin RESOLVER), undefined)
-  RESOLVER_ARGS := "--resolver" "$(RESOLVER)"
-endif
-
-STACK_YAML_ARGS :=
-ifneq ($(origin CONFIG), undefined)
-  STACK_YAML_ARGS := "--stack-yaml" "$(CONFIG)"
-endif
-
-MODE := stack
-ifneq ($(origin CABAL), undefined)
-  MODE := cabal
+ifeq ($(MODE), cabal)
+  GHC_VERSION ?= $(shell ghc --version | sed 's/.* //')
+  CABAL_ARGS := --with-ghc ghc-$(GHC_VERSION)
+  ifneq ($(origin PROJECT_FILE), undefined)
+    CABAL_ARGS += "--project-file=$(PROJECT_FILE)"
+  else
+    PROJECT_FILE_AUTO := cabal-$(GHC_VERSION).project
+    ifneq (,$(wildcard $(PROJECT_FILE_AUTO)))
+      CABAL_ARGS += "--project-file=$(PROJECT_FILE_AUTO)"
+    endif
+  endif
+else ifeq ($(MODE), stack)
+  STACK_ARGS :=
+  ifneq ($(origin CONFIG), undefined)
+    STACK_ARGS += --stack-yaml "$(CONFIG)"
+  endif
+  ifneq ($(origin RESOLVER), undefined)
+    STACK_ARGS += --resolver "$(RESOLVER)"
+  endif
+  ifneq ($(origin STACK_NIX_PATH), undefined)
+    STACK_ARGS += "--nix-path=$(STACK_NIX_PATH)"
+  endif
+else
+  $(error unknown MODE: $(MODE))
 endif
 
 ##############################################################################
@@ -67,8 +75,18 @@ define die
   (echo "error: $(1)" ; false)
 endef
 
+define get_version
+$(shell grep '^version:' $(if $(origin 1) == undefined,$(CABAL_FILE),$(1)) \
+        | sed 's/^version: *//')
+endef
+
 define hs_files
   find . -not -path '*/\.*' -type f -name '*.hs'
+endef
+
+define newline
+
+
 endef
 
 ##############################################################################
@@ -77,9 +95,9 @@ endef
 build: hr
 build: # build package *
 ifeq ($(MODE), cabal)
-> @cabal v2-build
+> cabal v2-build $(CABAL_ARGS)
 else
-> @stack build $(RESOLVER_ARGS) $(STACK_YAML_ARGS) $(NIX_PATH_ARGS)
+> stack build $(STACK_ARGS)
 endif
 .PHONY: build
 
@@ -98,7 +116,8 @@ else
 endif
 .PHONY: clean
 
-clean-all: clean # clean package and remove artifacts
+clean-all: clean
+clean-all: # clean package and remove artifacts
 > @rm -rf .hie
 > @rm -rf .stack-work
 > @rm -rf build
@@ -111,9 +130,9 @@ clean-all: clean # clean package and remove artifacts
 doc-api: hr
 doc-api: # build API documentation *
 ifeq ($(MODE), cabal)
-> @cabal v2-haddock
+> cabal v2-haddock $(CABAL_ARGS)
 else
-> @stack haddock $(RESOLVER_ARGS) $(STACK_YAML_ARGS) $(NIX_PATH_ARGS)
+> stack haddock $(STACK_ARGS)
 endif
 .PHONY: doc-api
 
@@ -128,10 +147,14 @@ help: # show this help
 >   | sed 's/^\([^:]\+\):[^#]*# \(.*\)/make \1\t\2/' \
 >   | column -t -s $$'\t'
 > @echo
-> @echo "* Use STACK_NIX_PATH to specify a Nix path."
-> @echo "* Use RESOLVER to specify a resolver."
-> @echo "* Use CONFIG to specify a Stack configuration file."
-> @echo "* Use CABAL to use Cabal instead of Stack."
+> @echo "Cabal mode (MODE=cabal)"
+> @echo "  * Set GHC_VERSION to specify a GHC version."
+> @echo "  * Set PROJECT_FILE to specify a cabal.project file."
+> @echo
+> @echo "Stack mode (MODE=stack)"
+> @echo "  * Set CONFIG to specify a stack.yaml file."
+> @echo "  * Set RESOLVER to specify a Stack resolver."
+> @echo "  * Set STACK_NIX_PATH to specify a Stack Nix path."
 .PHONY: help
 
 hlint: # run hlint on all Haskell source
@@ -159,16 +182,6 @@ hssloc: # count lines of Haskell source
 > @$(call hs_files) | xargs wc -l | tail -n 1 | sed 's/^ *\([0-9]*\).*$$/\1/'
 .PHONY: hssloc
 
-man: # build man page
-> $(eval VERSION := $(shell \
-    grep '^version:' $(CABAL_FILE) | sed 's/^version: *//'))
-> $(eval DATE := $(shell date --rfc-3339=date))
-> @pandoc -s -t man -o doc/$(BINARY).1 \
->   --variable header="$(BINARY) Manual" \
->   --variable footer="$(PROJECT) $(VERSION) ($(DATE))" \
->   doc/$(BINARY).1.md
-.PHONY: man
-
 recent: # show N most recently modified files
 > $(eval N := "10")
 > @find . -not -path '*/\.*' -type f -printf '%T+ %p\n' \
@@ -178,9 +191,9 @@ recent: # show N most recently modified files
 
 repl: # enter a REPL *
 ifeq ($(MODE), cabal)
-> @cabal repl
+> cabal repl $(CABAL_ARGS)
 else
-> @stack exec ghci $(RESOLVER_ARGS) $(STACK_YAML_ARGS) $(NIX_PATH_ARGS)
+> stack exec $(STACK_ARGS) ghci
 endif
 .PHONY: repl
 
@@ -196,8 +209,7 @@ source-git: # create source tarball of git TREE
     | wc -l))
 > @test "$(UNTRACKED)" = "0" \
 >   || echo "WARNING: Not including untracked files!" >&2
-> $(eval VERSION := $(shell \
-    grep '^version:' $(CABAL_FILE) | sed 's/^version: *//'))
+> $(eval VERSION := $(call get_version))
 > @mkdir -p build
 > @git archive --format=tar --prefix=$(PROJECT)-$(VERSION)/ $(TREE) \
 >   | xz \
@@ -213,8 +225,7 @@ source-tar: # create source tarball using tar
     | wc -l))
 > @test "$(UNTRACKED)" = "0" \
 >   || echo "WARNING: Including untracked files!" >&2
-> $(eval VERSION := $(shell \
-    grep '^version:' $(CABAL_FILE) | sed 's/^version: *//'))
+> $(eval VERSION := $(call get_version))
 > @mkdir -p build
 > @sed -e 's,^/,./,' -e 's,/$$,,' .gitignore > build/.gitignore
 > @tar \
@@ -239,10 +250,9 @@ endif
 
 static: hr
 static: # build a static executable
-> $(eval VERSION := $(shell \
-    grep '^version:' $(CABAL_FILE) | sed 's/^version: *//'))
+> $(eval VERSION := $(call get_version))
 ifeq ($(MODE), cabal)
-> $(call die,"static executable requires Stack")
+> $(error static not supported in CABAL mode)
 else
 > @stack build --flag lsupg:static --docker
 > @mkdir -p "build"
@@ -256,27 +266,34 @@ test: # run tests, optionally for pattern P *
 > $(eval P := "")
 ifeq ($(MODE), cabal)
 > @test -z "$(P)" \
->   && cabal v2-test --enable-tests --test-show-details=always \
->   || cabal v2-test --enable-tests --test-show-details=always \
->       --test-option '--patern=$(P)'
+>   && cabal v2-test $(CABAL_ARGS) --enable-tests --test-show-details=always \
+>   || cabal v2-test $(CABAL_ARGS) --enable-tests --test-show-details=always \
+>       --test-option '--pattern=$(P)'
 else
 > @test -z "$(P)" \
->   && stack test $(RESOLVER_ARGS) $(STACK_YAML_ARGS) $(NIX_PATH_ARGS) \
->   || stack test $(RESOLVER_ARGS) $(STACK_YAML_ARGS) $(NIX_PATH_ARGS) \
->       --test-arguments '--pattern $(P)'
+>   && stack test $(STACK_ARGS) \
+>   || stack test $(STACK_ARGS) --test-arguments '--pattern $(P)'
 endif
 .PHONY: test
 
-test-all: # run tests for all configured Stackage releases
-> @command -v hr >/dev/null 2>&1 && hr "stack-8.8.4.yaml" || true
-> @make test CONFIG=stack-8.8.4.yaml
-> @command -v hr >/dev/null 2>&1 && hr "stack-8.10.4.yaml" || true
-> @make test CONFIG=stack-8.10.4.yaml
-> @command -v hr >/dev/null 2>&1 && hr "stack-9.0.1.yaml" || true
-> @make test CONFIG=stack-9.0.1.yaml
+test-all: # run all configured tests
+ifeq ($(MODE), cabal)
+> $(foreach GHC_VERSION,$(CABAL_TEST_GHC_VERSIONS), \
+    @command -v hr >/dev/null 2>&1 && hr $(GHC_VERSION) || true $(newline) \
+    @make test GHC_VERSION=$(GHC_VERSION) $(newline) \
+  )
+else
+> $(foreach CONFIG,$(STACK_TEST_CONFIGS), \
+    @command -v hr >/dev/null 2>&1 && hr $(CONFIG) || true $(newline) \
+    @make test CONFIG=$(CONFIG) $(newline) \
+  )
+endif
 .PHONY: test-all
 
 test-nightly: # run tests for the latest Stackage nightly release
+ifeq ($(MODE), cabal)
+> $(error test-nightly not supported in CABAL mode)
+endif
 > @make test RESOLVER=nightly
 .PHONY: test-nightly
 
@@ -292,5 +309,5 @@ todo: # search for TODO items
 .PHONY: todo
 
 version: # show current version
-> @grep '^version:' $(CABAL_FILE) | sed 's/^version: */$(PROJECT) /'
+> @echo "$(PROJECT) $(call get_version)"
 .PHONY: version
