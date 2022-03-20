@@ -3,9 +3,6 @@ resolver: nightly-2022-03-20
 packages:
   - .
 
-extra-deps:
-  - text-2.0
-
 flags:
   aeson:
     ordered-keymap: false
