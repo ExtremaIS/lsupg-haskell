@@ -2,3 +2,7 @@ resolver: lts-19.0
 
 packages:
   - .
+
+docker:
+  enable: false
+  repo: "fpco/stack-build:lts-19"
