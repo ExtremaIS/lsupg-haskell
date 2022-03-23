@@ -6,3 +6,7 @@ packages:
 flags:
   aeson:
     ordered-keymap: false
+
+docker:
+  enable: false
+  repo: "ghcr.io/commercialhaskell/stackage/build:nightly"
