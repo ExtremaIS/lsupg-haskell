@@ -254,9 +254,10 @@ static: # build a static executable
 ifeq ($(MODE), cabal)
 > $(error static not supported in CABAL mode)
 else
+> @rm -rf .stack-work/install
 > @stack build $(STACK_ARGS) --flag lsupg:static --docker
 > @mkdir -p "build"
-> @cp "$$(find "$$(find .stack-work/install -mindepth 1 -maxdepth 1 -type d | grep '[0-9[a-z]\{34\}')" -type d -name bin)/lsupg" "build"
+> @cp "$$(find .stack-work/install -type f -name lsupg)" "build"
 > @cd build && tar -Jcvf "lsupg-$(VERSION).tar.xz" "lsupg"
 endif
 .PHONY: static
