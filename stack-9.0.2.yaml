@@ -5,4 +5,4 @@ packages:
 
 docker:
   enable: false
-  repo: "fpco/stack-build:lts-19"
+  repo: "utdemir/ghc-musl:v24-ghc902"

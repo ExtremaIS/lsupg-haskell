@@ -9,4 +9,4 @@ flags:
 
 docker:
   enable: false
-  repo: "ghcr.io/commercialhaskell/stackage/build:nightly"
+  repo: "utdemir/ghc-musl:v24-ghc922"
