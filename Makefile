@@ -18,6 +18,11 @@ STACK_TEST_CONFIGS += stack-8.10.7.yaml
 STACK_TEST_CONFIGS += stack-9.0.2.yaml
 STACK_TEST_CONFIGS += stack-9.2.2.yaml
 
+CABAL_STATIC_REPO_8.8.4  := utdemir/ghc-musl:v24-ghc884
+CABAL_STATIC_REPO_8.10.7 := utdemir/ghc-musl:v24-ghc8107
+CABAL_STATIC_REPO_9.0.2  := utdemir/ghc-musl:v24-ghc902
+CABAL_STATIC_REPO_9.2.2  := utdemir/ghc-musl:v24-ghc922
+
 ##############################################################################
 # Make configuration
 
@@ -45,10 +50,16 @@ ifeq ($(MODE), cabal)
       CABAL_ARGS += "--project-file=$(PROJECT_FILE_AUTO)"
     endif
   endif
+  CABAL_STATIC_REPO :=
+  ifneq ($(origin CABAL_STATIC_REPO_$(GHC_VERSION)), undefined)
+    CABAL_STATIC_REPO := $(CABAL_STATIC_REPO_$(GHC_VERSION))
+  endif
 else ifeq ($(MODE), stack)
   STACK_ARGS :=
   ifneq ($(origin CONFIG), undefined)
     STACK_ARGS += --stack-yaml "$(CONFIG)"
+  else
+    CONFIG := stack.yaml
   endif
   ifneq ($(origin RESOLVER), undefined)
     STACK_ARGS += --resolver "$(RESOLVER)"
@@ -249,13 +260,25 @@ endif
 .PHONY: stan
 
 static: hr
-static: # build a static executable
+static: # build a static executable *
 > $(eval VERSION := $(call get_version))
 ifeq ($(MODE), cabal)
-> $(error static not supported in CABAL mode)
+> @test -n "$(CABAL_STATIC_REPO)" \
+>   || $(call die,"Docker repo not configured for GHC $(GHC_VERSION)")
+> @rm -rf dist-newstyle
+> @docker run --rm -it -v "$(CURDIR):/host" "$(CABAL_STATIC_REPO)" \
+>   "/host/script/build-cabal-static.sh" --flags=static $(CABAL_ARGS)
+> @mkdir -p "build"
+> @cp "$$(find dist-newstyle -type f -name lsupg)" "build"
+> @strip "build/lsupg"
+> @cd build && tar -Jcvf "lsupg-$(VERSION).tar.xz" "lsupg"
 else
-> @rm -rf .stack-work/install
-> @stack build $(STACK_ARGS) --flag lsupg:static --docker
+> @test -f "$(CONFIG)" || $(call die,"$(CONFIG) not found")
+> $(eval REPO := $(shell grep '^ *repo: "[^"]*"$$' "$(CONFIG)" \
+    | sed -e 's/^[^"]*"//' -e 's/"$$//'))
+> @test -n "$(REPO)" || $(call die,"Docker repo not configured in $(CONFIG)")
+> @rm -rf .stack-work
+> @stack build --stack-yaml $(CONFIG) --flag lsupg:static --docker
 > @mkdir -p "build"
 > @cp "$$(find .stack-work/install -type f -name lsupg)" "build"
 > @cd build && tar -Jcvf "lsupg-$(VERSION).tar.xz" "lsupg"
