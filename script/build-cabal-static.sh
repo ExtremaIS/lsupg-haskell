@@ -12,6 +12,7 @@ die () {
 
 cd "/host" || die "/host not found"
 
+cabal v2-update
 cabal v2-build --enable-executable-static "$@" || die "cabal: exit code $?"
 
 PUID="$(stat -c '%u' /host)"
