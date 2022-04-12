@@ -24,6 +24,13 @@ following conventions:
 
 [KaC]: <https://keepachangelog.com/en/1.0.0/>
 
+## 0.3.0.2 (2022-04-12)
+
+### Non-Breaking
+
+* Bump `ttc` dependency version upper bound
+* Configure static building with Cabal or Stack for all supported GHC versions
+
 ## 0.3.0.1 (2022-02-28)
 
 ### Non-Breaking

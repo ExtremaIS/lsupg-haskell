@@ -1,4 +1,8 @@
-resolver: nightly-2022-02-27
+resolver: lts-19.2
 
 packages:
   - .
+
+docker:
+  enable: false
+  repo: "utdemir/ghc-musl:v24-ghc902"

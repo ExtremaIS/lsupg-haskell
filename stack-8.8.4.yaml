@@ -4,4 +4,8 @@ packages:
   - .
 
 extra-deps:
-  - ttc-1.1.0.1
+  - ttc-1.2.0.0
+
+docker:
+  enable: false
+  repo: "utdemir/ghc-musl:v24-ghc884"

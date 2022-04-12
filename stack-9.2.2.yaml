@@ -3,9 +3,10 @@ resolver: nightly-2022-04-06
 packages:
   - .
 
-extra-deps:
-  - text-2.0
-
 flags:
   aeson:
     ordered-keymap: false
+
+docker:
+  enable: false
+  repo: "utdemir/ghc-musl:v24-ghc922"
