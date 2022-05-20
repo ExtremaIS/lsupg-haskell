@@ -26,6 +26,10 @@ following conventions:
 
 ## Unreleased
 
+### Non-Breaking
+
+* Bump `transformers` dependency version upper bound
+
 ## 0.3.0.2 (2022-04-12)
 
 ### Non-Breaking

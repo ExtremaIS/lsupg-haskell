@@ -4,7 +4,10 @@ packages:
   - .
 
 extra-deps:
+  - exceptions-0.10.5
+  - mtl-2.3
   - text-2.0
+  - transformers-0.6.0.4
 
 flags:
   aeson:
