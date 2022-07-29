@@ -29,6 +29,7 @@ following conventions:
 ### Non-Breaking
 
 * Bump `transformers` dependency version upper bound
+* Bump `vector` dependency version upper bound
 
 ## 0.3.0.2 (2022-04-12)
 
