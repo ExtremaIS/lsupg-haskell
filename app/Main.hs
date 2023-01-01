@@ -2,7 +2,7 @@
 -- |
 -- Module      : Main
 -- Description : lsupg: list items in a container that can be upgraded
--- Copyright   : Copyright (c) 2021-2022 Travis Cardwell
+-- Copyright   : Copyright (c) 2021-2023 Travis Cardwell
 -- License     : MIT
 --
 -- See the README for details.
