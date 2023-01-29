@@ -1,16 +1,15 @@
-resolver: nightly-2022-07-07
+resolver: nightly-2023-01-28
 
 packages:
   - .
 
 extra-deps:
-  - exceptions-0.10.5
-  - mtl-2.3
-  - text-2.0
-  - transformers-0.6.0.4
+  - exceptions-0.10.7
+  - mtl-2.3.1
+  # https://hackage.haskell.org/package/transformers
+  - transformers-0.6.0.6
+  # https://hackage.haskell.org/package/vector
   - vector-0.13.0.0
-  - vector-algorithms-0.9.0.1
-  - vector-stream-0.1.0.0
 
 flags:
   aeson:
