@@ -1,8 +1,8 @@
-resolver: lts-19.25
+resolver: lts-19.33
 
 packages:
   - .
 
 docker:
   enable: false
-  repo: "utdemir/ghc-musl:v24-ghc902"
+  repo: "utdemir/ghc-musl:v25-ghc902"

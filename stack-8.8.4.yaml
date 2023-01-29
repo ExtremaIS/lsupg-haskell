@@ -8,4 +8,4 @@ extra-deps:
 
 docker:
   enable: false
-  repo: "utdemir/ghc-musl:v24-ghc884"
+  repo: "utdemir/ghc-musl:v25-ghc884"
