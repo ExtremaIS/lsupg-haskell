@@ -11,17 +11,17 @@ MODE ?= stack
 CABAL_TEST_GHC_VERSIONS += 8.8.4
 CABAL_TEST_GHC_VERSIONS += 8.10.7
 CABAL_TEST_GHC_VERSIONS += 9.0.2
-CABAL_TEST_GHC_VERSIONS += 9.2.2
+CABAL_TEST_GHC_VERSIONS += 9.2.5
 
 STACK_TEST_CONFIGS += stack-8.8.4.yaml
 STACK_TEST_CONFIGS += stack-8.10.7.yaml
 STACK_TEST_CONFIGS += stack-9.0.2.yaml
-STACK_TEST_CONFIGS += stack-9.2.2.yaml
+STACK_TEST_CONFIGS += stack-9.2.5.yaml
 
-CABAL_STATIC_REPO_8.8.4  := utdemir/ghc-musl:v24-ghc884
-CABAL_STATIC_REPO_8.10.7 := utdemir/ghc-musl:v24-ghc8107
-CABAL_STATIC_REPO_9.0.2  := utdemir/ghc-musl:v24-ghc902
-CABAL_STATIC_REPO_9.2.2  := utdemir/ghc-musl:v24-ghc922
+CABAL_STATIC_REPO_8.8.4  := utdemir/ghc-musl:v25-ghc884
+CABAL_STATIC_REPO_8.10.7 := utdemir/ghc-musl:v25-ghc8107
+CABAL_STATIC_REPO_9.0.2  := utdemir/ghc-musl:v25-ghc902
+CABAL_STATIC_REPO_9.2.5  := utdemir/ghc-musl:v25-ghc925
 
 ##############################################################################
 # Make configuration
