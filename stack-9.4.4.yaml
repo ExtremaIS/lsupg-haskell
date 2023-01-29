@@ -1,0 +1,12 @@
+resolver: nightly-2023-01-28
+
+packages:
+  - .
+
+flags:
+  aeson:
+    ordered-keymap: false
+
+docker:
+  enable: false
+  repo: "utdemir/ghc-musl:v25-ghc944"
