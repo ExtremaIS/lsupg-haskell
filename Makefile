@@ -8,13 +8,6 @@ EXECUTABLES := lsupg
 
 MODE ?= stack
 
-CABAL_STATIC_REPO_8.6.5  := lsugp-build:8.6.5
-CABAL_STATIC_REPO_8.8.4  := lsugp-build:8.8.4
-CABAL_STATIC_REPO_8.10.7 := lsupg-build:8.10.7
-CABAL_STATIC_REPO_9.0.2  := lsupg-build:9.0.2
-CABAL_STATIC_REPO_9.2.8  := lsupg-build:9.2.8
-CABAL_STATIC_REPO_9.4.8  := lsupg-build:9.4.8
-
 ##############################################################################
 # Make configuration
 
@@ -42,16 +35,10 @@ ifeq ($(MODE), cabal)
       CABAL_ARGS += "--project-file=$(PROJECT_FILE_AUTO)"
     endif
   endif
-  CABAL_STATIC_REPO :=
-  ifneq ($(origin CABAL_STATIC_REPO_$(GHC_VERSION)), undefined)
-    CABAL_STATIC_REPO := $(CABAL_STATIC_REPO_$(GHC_VERSION))
-  endif
 else ifeq ($(MODE), stack)
   STACK_ARGS :=
   ifneq ($(origin CONFIG), undefined)
     STACK_ARGS += --stack-yaml "$(CONFIG)"
-  else
-    CONFIG := stack.yaml
   endif
   ifneq ($(origin RESOLVER), undefined)
     STACK_ARGS += --resolver "$(RESOLVER)"
@@ -260,25 +247,53 @@ static: hr
 static: # build a static executable *
 > $(eval VERSION := $(call get_version))
 ifeq ($(MODE), cabal)
-> @test -n "$(CABAL_STATIC_REPO)" \
->   || $(call die,"Docker repo not configured for GHC $(GHC_VERSION)")
+> $(eval REPO := "$(PACKAGE)-build:$(GHC_VERSION)")
+> @docker image inspect "$(REPO)" >/dev/null 2>&1 \
+>   || docker buildx build \
+>        --build-arg "GHC_VERSION=$(GHC_VERSION)" \
+>        -t "$(REPO)" \
+>        -f docker/Dockerfile \
+>        .
 > @rm -rf dist-newstyle
-> @docker run --rm -it -v "$(CURDIR):/host" "$(CABAL_STATIC_REPO)" \
+> docker run --rm -it -v "$(CURDIR):/host" "$(REPO)" \
 >   "/host/docker/build-cabal-static.sh" --flags=static $(CABAL_ARGS)
 > @mkdir -p "build"
-> @cp "$$(find dist-newstyle -type f -name lsupg)" "build"
-> @strip "build/lsupg"
-> @cd build && tar -Jcvf "lsupg-$(VERSION).tar.xz" "lsupg"
+> $(foreach EXE,$(EXECUTABLES), \
+    @cp "$$(find dist-newstyle -type f -name $(EXE))" "build" $(newline) \
+    @strip "build/$(EXE)" $(newline) \
+  )
+> @cd build && tar -Jcvf "$(PACKAGE)-$(VERSION).tar.xz" $(EXECUTABLES)
 else
-> @test -f "$(CONFIG)" || $(call die,"$(CONFIG) not found")
+ifeq ($(origin CONFIG), undefined)
+> $(eval CONFIG := stack.yaml)
+endif
 > $(eval REPO := $(shell grep '^ *repo: "[^"]*"$$' "$(CONFIG)" \
     | sed -e 's/^[^"]*"//' -e 's/"$$//'))
-> @test -n "$(REPO)" || $(call die,"Docker repo not configured in $(CONFIG)")
+> $(eval GHC_VERSION := $(shell echo "$(REPO)" | sed 's/^[^:]*://' ))
+> $(eval FLAGS := $(shell awk '\
+    BEGIN {print "--flag"; print "$(PACKAGE):static"} \
+    /^flags:$$/{++n; next} \
+    /^$$/{n=0} \
+    (n>0 && $$0 ~ /^  [^ ]/){p=$$1} \
+    (n>0 && $$0 ~ /^   / && $$2 == "true") \
+      {print "--flag"; print p substr($$1,0,length($$1)-1)} \
+    (n>0 && $$0 ~ /^   / && $$2 == "false") \
+      {print "--flag"; print p "-" substr($$1,0,length($$1)-1)} \
+    ' "$(CONFIG)"))
+> @docker image inspect "$(REPO)" >/dev/null 2>&1 \
+>   || docker buildx build \
+>        --build-arg "GHC_VERSION=$(GHC_VERSION)" \
+>        -t "$(REPO)" \
+>        -f docker/Dockerfile \
+>        .
 > @rm -rf .stack-work
-> @stack build --stack-yaml $(CONFIG) --flag lsupg:static --docker
+> stack build --stack-yaml $(CONFIG) $(FLAGS) --docker
 > @mkdir -p "build"
-> @cp "$$(find .stack-work/install -type f -name lsupg)" "build"
-> @cd build && tar -Jcvf "lsupg-$(VERSION).tar.xz" "lsupg"
+> $(foreach EXE,$(EXECUTABLES), \
+    @cp "$$(find .stack-work/install -type f -name $(EXE))" "build" \
+    $(newline) \
+  )
+> @cd build && tar -Jcvf "$(PACKAGE)-$(VERSION).tar.xz" $(EXECUTABLES)
 endif
 .PHONY: static
 
