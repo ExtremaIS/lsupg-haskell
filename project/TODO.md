@@ -15,10 +15,8 @@ Components:
 
 ## Tests
 
+## Compatibility
+
 ## Documentation
 
 ## Project
-
-* Static executable
-    * Cabal?
-    * Nix?
