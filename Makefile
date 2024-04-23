@@ -256,7 +256,7 @@ ifeq ($(MODE), cabal)
 >        .
 > @rm -rf dist-newstyle
 > docker run --rm -it -v "$(CURDIR):/host" "$(REPO)" \
->   "/host/docker/build-cabal-static.sh" --flags=static $(CABAL_ARGS)
+>   "/host/bin/build-cabal-static.sh" --flags=static $(CABAL_ARGS)
 > @mkdir -p "build"
 > $(foreach EXE,$(EXECUTABLES), \
     @cp "$$(find dist-newstyle -type f -name $(EXE))" "build" $(newline) \
