@@ -272,7 +272,6 @@ endif
 > $(eval GHC_VERSION := $(shell echo "$(REPO)" | sed 's/^[^:]*://' ))
 > $(eval FLAGS := --flag "$(PACKAGE):static")
 > $(eval FLAGS += $(shell bin/stack-yaml-flags "$(CONFIG)"))
-> @echo "DEBUG FLAGS" $(FLAGS)
 > @docker image inspect "$(REPO)" >/dev/null 2>&1 \
 >   || docker buildx build \
 >        --build-arg "GHC_VERSION=$(GHC_VERSION)" \
