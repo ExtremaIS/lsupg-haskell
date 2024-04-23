@@ -33,6 +33,11 @@ source-repository head
   type: git
   location: https://github.com/ExtremaIS/lsupg-haskell.git
 
+flag optparse-applicative_ge_0_18
+  description: Use optparse-applicative 0.18 or newer
+  default: False
+  manual: False
+
 flag static
   description: Pass -static/-pthread to ghc when linking
   default: False
@@ -76,12 +81,18 @@ executable lsupg
   other-modules:
       LibOA
   build-depends:
-      ansi-wl-pprint >=0.6 && <0.7
-    , base
-    , optparse-applicative >=0.14.3 && <0.18
+      base
     , lsupg
     , ttc
     , typed-process
+  if flag(optparse-applicative_ge_0_18)
+    build-depends:
+        optparse-applicative >=0.18 && <0.19
+      , prettyprinter >=1.7.1 && <1.8
+  else
+    build-depends:
+        ansi-wl-pprint >=0.6.8 && <1.1
+      , optparse-applicative >=0.14.3 && <0.18
   default-language: Haskell2010
   ghc-options: -Wall
   if flag(static)
