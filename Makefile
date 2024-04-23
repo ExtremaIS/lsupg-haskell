@@ -276,7 +276,7 @@ ifeq ($(MODE), cabal)
 >   || $(call die,"Docker repo not configured for GHC $(GHC_VERSION)")
 > @rm -rf dist-newstyle
 > @docker run --rm -it -v "$(CURDIR):/host" "$(CABAL_STATIC_REPO)" \
->   "/host/script/build-cabal-static.sh" --flags=static $(CABAL_ARGS)
+>   "/host/docker/build-cabal-static.sh" --flags=static $(CABAL_ARGS)
 > @mkdir -p "build"
 > @cp "$$(find dist-newstyle -type f -name lsupg)" "build"
 > @strip "build/lsupg"
