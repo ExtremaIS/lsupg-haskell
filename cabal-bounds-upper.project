@@ -1,23 +1,23 @@
 packages: ./lsupg.cabal
 
-with-compiler: ghc-9.6.4
+with-compiler: ghc-9.8.2
 
 constraints:
     aeson -ordered-keymap
 
     -- https://hackage.haskell.org/package/aeson
-  , aeson == 2.1.2.1
+  , aeson == 2.2.1.0
 
     -- https://hackage.haskell.org/package/attoparsec
   , attoparsec == 0.14.4
 
     -- https://hackage.haskell.org/package/base
     -- GHC boot library
-  , base == 4.18.2.0
+  , base == 4.19.1.0
 
     -- https://hackage.haskell.org/package/bytestring
     -- GHC boot library
-  , bytestring == 0.11.5.3
+  , bytestring == 0.12.1.0
 
     -- https://hackage.haskell.org/package/cassava
   , cassava == 0.5.3.0
@@ -36,18 +36,18 @@ constraints:
   , prettyprinter == 1.7.1
 
     -- https://hackage.haskell.org/package/tasty
-  , tasty == 1.4.3
+  , tasty == 1.5
 
     -- https://hackage.haskell.org/package/tasty-hunit
   , tasty-hunit == 0.10.1
 
     -- https://hackage.haskell.org/package/template-haskell
     -- GHC boot library
-  , template-haskell == 2.20.0.0
+  , template-haskell == 2.21.0.0
 
     -- https://hackage.haskell.org/package/text
     -- GHC boot library
-  , text == 2.0.2
+  , text == 2.1.1
 
     -- https://hackage.haskell.org/package/transformers
     -- GHC boot library

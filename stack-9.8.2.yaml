@@ -1,0 +1,14 @@
+resolver: nightly-2024-04-22
+
+packages:
+  - .
+
+flags:
+  aeson:
+    ordered-keymap: false
+  lsupg:
+    optparse-applicative_ge_0_18: true
+
+docker:
+  enable: false
+  repo: "lsupg-build:9.8.2"
