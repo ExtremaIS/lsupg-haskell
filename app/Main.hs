@@ -9,6 +9,7 @@
 ------------------------------------------------------------------------------
 
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeApplications #-}
 
 module Main (main) where
@@ -39,6 +40,7 @@ import qualified LsUpg.Component as Component
 import LsUpg.Component.Nix (defaultNixPath)
 
 -- (lsupg:executable)
+import qualified Build
 import qualified LibOA
 
 ------------------------------------------------------------------------------
@@ -151,6 +153,12 @@ runSpecified Options{..} =
         exitWith $ ExitFailure 2
 
 ------------------------------------------------------------------------------
+-- $Version
+
+version :: String
+version = $(Build.version)
+
+------------------------------------------------------------------------------
 -- $Main
 
 main :: IO ()
@@ -163,7 +171,7 @@ main = do
   where
     pinfo :: OA.ParserInfo Options
     pinfo
-      = OA.info (LibOA.helper <*> LibOA.versioner LsUpg.version <*> options)
+      = OA.info (LibOA.helper <*> LibOA.versioner version <*> options)
       $ mconcat
           [ OA.fullDesc
           , OA.progDesc "list items that can be upgraded"

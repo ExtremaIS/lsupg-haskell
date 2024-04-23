@@ -81,10 +81,12 @@ executable lsupg
   hs-source-dirs: app
   main-is: Main.hs
   other-modules:
-      LibOA
+      Build
+    , LibOA
   build-depends:
       base
     , lsupg
+    , template-haskell
     , ttc
     , typed-process
   if flag(optparse-applicative_ge_0_18)
