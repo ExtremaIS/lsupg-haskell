@@ -33,9 +33,11 @@ following conventions:
 ### Non-Breaking
 
 * Bump `aeson` dependency version upper bound
+* Bump `base` dependency version upper bound
 * Bump `hashable` dependency version upper bound
 * Bump `template-haskell` dependency version upper bound
 * Bump `transformers` dependency version upper bound
+* Bump `ttc` dependency version upper bound
 * Bump `vector` dependency version upper bound
 * Adjust dependency constraints to match tested versions
 
