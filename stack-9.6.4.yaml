@@ -1,5 +1,9 @@
 resolver: lts-22.18
 
+docker:
+  enable: false
+  repo: "lsupg-build:9.6.4"
+
 packages:
   - .
 
@@ -8,7 +12,3 @@ flags:
     ordered-keymap: false
   lsupg:
     optparse-applicative_ge_0_18: true
-
-docker:
-  enable: false
-  repo: "lsupg-build:9.6.4"

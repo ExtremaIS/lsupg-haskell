@@ -1,8 +1,8 @@
 resolver: lts-19.33
 
-packages:
-  - .
-
 docker:
   enable: false
   repo: "lsupg-build:9.0.2"
+
+packages:
+  - .

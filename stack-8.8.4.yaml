@@ -1,11 +1,11 @@
 resolver: lts-16.31
 
+docker:
+  enable: false
+  repo: "lsugp-build:8.8.4"
+
 packages:
   - .
 
 extra-deps:
   - ttc-1.2.0.0
-
-docker:
-  enable: false
-  repo: "lsugp-build:8.8.4"

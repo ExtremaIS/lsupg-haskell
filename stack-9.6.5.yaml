@@ -1,5 +1,9 @@
 resolver: ghc-9.6.5
 
+docker:
+  enable: false
+  repo: "lsupg-build:9.6.5"
+
 packages:
   - .
 
@@ -8,10 +12,6 @@ flags:
     ordered-keymap: false
   lsupg:
     optparse-applicative_ge_0_18: true
-
-docker:
-  enable: false
-  repo: "lsupg-build:9.6.5"
 
 extra-deps:
   - aeson-2.1.2.1

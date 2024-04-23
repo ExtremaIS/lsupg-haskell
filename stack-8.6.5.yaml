@@ -1,11 +1,11 @@
 resolver: lts-14.27
 
+docker:
+  enable: false
+  repo: "lsugp-build:8.6.5"
+
 packages:
   - .
 
 extra-deps:
   - ttc-1.2.0.0
-
-docker:
-  enable: false
-  repo: "lsugp-build:8.6.5"
