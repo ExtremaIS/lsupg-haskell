@@ -1,4 +1,4 @@
-resolver: nightly-2023-01-28
+resolver: lts-21.25
 
 packages:
   - .
@@ -9,4 +9,4 @@ flags:
 
 docker:
   enable: false
-  repo: "lsupg-build:9.4.4"
+  repo: "lsupg-build:9.4.8"
