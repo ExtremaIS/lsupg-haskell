@@ -9,4 +9,4 @@ flags:
 
 docker:
   enable: false
-  repo: "utdemir/ghc-musl:v25-ghc944"
+  repo: "lsupg-build:9.4.4"

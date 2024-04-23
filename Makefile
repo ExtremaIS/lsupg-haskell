@@ -20,11 +20,11 @@ STACK_TEST_CONFIGS += stack-9.0.2.yaml
 STACK_TEST_CONFIGS += stack-9.2.5.yaml
 STACK_TEST_CONFIGS += stack-9.4.4.yaml
 
-CABAL_STATIC_REPO_8.8.4  := utdemir/ghc-musl:v25-ghc884
-CABAL_STATIC_REPO_8.10.7 := utdemir/ghc-musl:v25-ghc8107
-CABAL_STATIC_REPO_9.0.2  := utdemir/ghc-musl:v25-ghc902
-CABAL_STATIC_REPO_9.2.5  := utdemir/ghc-musl:v25-ghc925
-CABAL_STATIC_REPO_9.4.4  := utdemir/ghc-musl:v25-ghc944
+CABAL_STATIC_REPO_8.8.4  := lsugp-build:8.8.4
+CABAL_STATIC_REPO_8.10.7 := lsupg-build:8.10.7
+CABAL_STATIC_REPO_9.0.2  := lsupg-build:9.0.2
+CABAL_STATIC_REPO_9.2.5  := lsupg-build:9.2.5
+CABAL_STATIC_REPO_9.4.4  := lsupg-build:9.4.4
 
 ##############################################################################
 # Make configuration

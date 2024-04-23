@@ -5,4 +5,4 @@ packages:
 
 docker:
   enable: false
-  repo: "utdemir/ghc-musl:v25-ghc902"
+  repo: "lsupg-build:9.0.2"

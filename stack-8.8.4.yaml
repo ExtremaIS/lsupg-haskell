@@ -8,4 +8,4 @@ extra-deps:
 
 docker:
   enable: false
-  repo: "utdemir/ghc-musl:v25-ghc884"
+  repo: "lsugp-build:8.8.4"
