@@ -11,19 +11,19 @@ MODE ?= stack
 CABAL_TEST_GHC_VERSIONS += 8.8.4
 CABAL_TEST_GHC_VERSIONS += 8.10.7
 CABAL_TEST_GHC_VERSIONS += 9.0.2
-CABAL_TEST_GHC_VERSIONS += 9.2.5
+CABAL_TEST_GHC_VERSIONS += 9.2.8
 CABAL_TEST_GHC_VERSIONS += 9.4.4
 
 STACK_TEST_CONFIGS += stack-8.8.4.yaml
 STACK_TEST_CONFIGS += stack-8.10.7.yaml
 STACK_TEST_CONFIGS += stack-9.0.2.yaml
-STACK_TEST_CONFIGS += stack-9.2.5.yaml
+STACK_TEST_CONFIGS += stack-9.2.8.yaml
 STACK_TEST_CONFIGS += stack-9.4.4.yaml
 
 CABAL_STATIC_REPO_8.8.4  := lsugp-build:8.8.4
 CABAL_STATIC_REPO_8.10.7 := lsupg-build:8.10.7
 CABAL_STATIC_REPO_9.0.2  := lsupg-build:9.0.2
-CABAL_STATIC_REPO_9.2.5  := lsupg-build:9.2.5
+CABAL_STATIC_REPO_9.2.8  := lsupg-build:9.2.8
 CABAL_STATIC_REPO_9.4.4  := lsupg-build:9.4.4
 
 ##############################################################################
