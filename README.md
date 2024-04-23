@@ -142,7 +142,9 @@ Exit Code | Meaning
 The `lsupg` static binary should be mounted and executed within a container.
 The `--docker` option provides an easy way to do this with a Docker
 container.  For example, the following checks for upgrades in a
-[debian](https://hub.docker.com/_/debian) container:
+[debian][] container:
+
+[debian]: <https://hub.docker.com/_/debian>
 
 ```
 $ ./lsupg --docker debian:buster
@@ -185,8 +187,9 @@ parsing is done correctly.
 ### Tags
 
 All releases are tagged in the `main` branch.  Release tags are signed using
-the
-[`security@extrema.is` GPG key](http://keys.gnupg.net/pks/lookup?op=vindex&fingerprint=on&search=0x1D484E4B4705FADF).
+the [`security@extrema.is` GPG key][].
+
+[`security@extrema.is` GPG key]: <http://keys.gnupg.net/pks/lookup?op=vindex&fingerprint=on&search=0x1D484E4B4705FADF>
 
 ### Contribution
 
@@ -197,6 +200,8 @@ Issues may also be submitted via email to <bugs@extrema.is>.
 
 ### License
 
-This project is released under the
-[MIT License](https://opensource.org/licenses/MIT) as specified in the
-[`LICENSE`](LICENSE) file.
+This project is released under the [MIT License][] as specified in the
+[`LICENSE`][] file.
+
+[MIT License]: <https://opensource.org/licenses/MIT>
+[`LICENSE`]: <LICENSE>
