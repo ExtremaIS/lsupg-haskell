@@ -13,10 +13,6 @@
 
 module Main (main) where
 
--- https://hackage.haskell.org/package/ansi-wl-pprint
-import qualified Text.PrettyPrint.ANSI.Leijen as Doc
-import Text.PrettyPrint.ANSI.Leijen (Doc)
-
 -- https://hackage.haskell.org/package/base
 import Control.Applicative (many, optional)
 import Control.Monad (when)
@@ -179,21 +175,21 @@ main = do
               ]
           ]
 
-    outputFormatHelp :: Doc
+    outputFormatHelp :: LibOA.Doc
     outputFormatHelp
       = LibOA.section "FORMATs:"
-      . Doc.text
+      . LibOA.string
       . intercalate ", "
       . map (TTC.render @LsUpg.OutputFormat)
       $ [minBound ..]
 
-    componentsHelp :: Doc
+    componentsHelp :: LibOA.Doc
     componentsHelp = LibOA.section "COMPONENTs:" $ LibOA.table_ 2
       [ [TTC.render (Component.name c), Component.description c]
       | c <- LsUpg.allComponents
       ]
 
-    exitCodesHelp :: Doc
+    exitCodesHelp :: LibOA.Doc
     exitCodesHelp = LibOA.section "Exit codes:" $ LibOA.table_ 2
       [ ["0", "no upgrades available"]
       , ["1", "program error"]

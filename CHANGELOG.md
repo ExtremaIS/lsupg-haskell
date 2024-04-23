@@ -37,6 +37,7 @@ following conventions:
 * Bump `template-haskell` dependency version upper bound
 * Bump `transformers` dependency version upper bound
 * Bump `vector` dependency version upper bound
+* Adjust dependency constraints to match tested versions
 
 ## 0.3.0.2 (2022-04-12)
 

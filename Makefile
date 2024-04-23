@@ -8,20 +8,6 @@ EXECUTABLES := lsupg
 
 MODE ?= stack
 
-CABAL_TEST_GHC_VERSIONS += 8.6.5
-CABAL_TEST_GHC_VERSIONS += 8.8.4
-CABAL_TEST_GHC_VERSIONS += 8.10.7
-CABAL_TEST_GHC_VERSIONS += 9.0.2
-CABAL_TEST_GHC_VERSIONS += 9.2.8
-CABAL_TEST_GHC_VERSIONS += 9.4.8
-
-STACK_TEST_CONFIGS += stack-8.6.5.yaml
-STACK_TEST_CONFIGS += stack-8.8.4.yaml
-STACK_TEST_CONFIGS += stack-8.10.7.yaml
-STACK_TEST_CONFIGS += stack-9.0.2.yaml
-STACK_TEST_CONFIGS += stack-9.2.8.yaml
-STACK_TEST_CONFIGS += stack-9.4.8.yaml
-
 CABAL_STATIC_REPO_8.6.5  := lsugp-build:8.6.5
 CABAL_STATIC_REPO_8.8.4  := lsugp-build:8.8.4
 CABAL_STATIC_REPO_8.10.7 := lsupg-build:8.10.7
@@ -70,9 +56,6 @@ else ifeq ($(MODE), stack)
   ifneq ($(origin RESOLVER), undefined)
     STACK_ARGS += --resolver "$(RESOLVER)"
   endif
-  ifneq ($(origin STACK_NIX_PATH), undefined)
-    STACK_ARGS += "--nix-path=$(STACK_NIX_PATH)"
-  endif
 else
   $(error unknown MODE: $(MODE))
 endif
@@ -112,9 +95,9 @@ endef
 build: hr
 build: # build package *
 ifeq ($(MODE), cabal)
-> cabal v2-build $(CABAL_ARGS)
+> cabal v2-build $(CABAL_ARGS) --enable-tests --enable-benchmarks
 else
-> stack build $(STACK_ARGS)
+> stack build $(STACK_ARGS) --test --bench --no-run-tests --no-run-benchmarks
 endif
 .PHONY: build
 
@@ -142,6 +125,17 @@ clean-all: # clean package and remove artifacts
 > @rm -f cabal.project.local
 > @rm -f result*
 .PHONY: clean-all
+
+coverage: hr
+coverage: # run tests with code coverage *
+ifeq ($(MODE), cabal)
+> cabal v2-test $(CABAL_ARGS) \
+>   --enable-coverage --enable-tests --test-show-details=always
+else
+> stack test $(STACK_ARGS) --coverage
+> stack hpc report .
+endif
+.PHONY: coverage
 
 doc-api: hr
 doc-api: # build API documentation *
@@ -176,7 +170,6 @@ help: # show this help
 > @echo "Stack mode (MODE=stack)"
 > @echo "  * Set CONFIG to specify a stack.yaml file."
 > @echo "  * Set RESOLVER to specify a Stack resolver."
-> @echo "  * Set STACK_NIX_PATH to specify a Stack Nix path."
 .PHONY: help
 
 hlint: # run hlint on all Haskell source
@@ -203,6 +196,10 @@ hsrecent: # show N most recently modified Haskell files
 hssloc: # count lines of Haskell source
 > @$(call hs_files) | xargs wc -l | tail -n 1 | sed 's/^ *\([0-9]*\).*$$/\1/'
 .PHONY: hssloc
+
+ignored: # list files ignored by git
+> @git ls-files . --ignored --exclude-standard --others
+.PHONY: ignored
 
 recent: # show N most recently modified files
 > $(eval N := "10")
@@ -300,23 +297,34 @@ else
 endif
 .PHONY: test
 
-test-all: # run all configured tests
-ifeq ($(MODE), cabal)
-> $(foreach GHC_VERSION,$(CABAL_TEST_GHC_VERSIONS), \
-    @command -v hr >/dev/null 2>&1 && hr $(GHC_VERSION) || true $(newline) \
-    @make test GHC_VERSION=$(GHC_VERSION) $(newline) \
-  )
-else
-> $(foreach CONFIG,$(STACK_TEST_CONFIGS), \
-    @command -v hr >/dev/null 2>&1 && hr $(CONFIG) || true $(newline) \
-    @make test CONFIG=$(CONFIG) $(newline) \
-  )
-endif
+test-all: # run all configured tests using MODE
+> @./test-all.sh "$(MODE)"
 .PHONY: test-all
 
-test-nightly: # run tests for the latest Stackage nightly release
+test-bounds-lower: # test lower bounds (Cabal only)
+ifeq ($(MODE), stack)
+> $(error test-bounds-lower not supported in Stack mode)
+endif
+> @make test-build CABAL_ARGS="--project-file=cabal-bounds-lower.project"
+.PHONY: test-bounds-lower
+
+test-bounds-upper: # test upper bounds (Cabal only)
+ifeq ($(MODE), stack)
+> $(error test-bounds-upper not supported in Stack mode)
+endif
+> @make test-build CABAL_ARGS="--project-file=cabal-bounds-upper.project"
+.PHONY: test-bounds-upper
+
+test-build: hr
+test-build: build
+test-build: test
+test-build: doc-api
+test-build: # build, run tests, build API documentation *
+.PHONY: test-build
+
+test-nightly: # run tests for the latest Stackage nightly release (Stack only)
 ifeq ($(MODE), cabal)
-> $(error test-nightly not supported in CABAL mode)
+> $(error test-nightly not supported in Cabal mode)
 endif
 > @make test RESOLVER=nightly
 .PHONY: test-nightly
