@@ -270,16 +270,9 @@ endif
 > $(eval REPO := $(shell grep '^ *repo: "[^"]*"$$' "$(CONFIG)" \
     | sed -e 's/^[^"]*"//' -e 's/"$$//'))
 > $(eval GHC_VERSION := $(shell echo "$(REPO)" | sed 's/^[^:]*://' ))
-> $(eval FLAGS := $(shell awk '\
-    BEGIN {print "--flag"; print "$(PACKAGE):static"} \
-    /^flags:$$/{++n; next} \
-    /^$$/{n=0} \
-    (n>0 && $$0 ~ /^  [^ ]/){p=$$1} \
-    (n>0 && $$0 ~ /^   / && $$2 == "true") \
-      {print "--flag"; print p substr($$1,0,length($$1)-1)} \
-    (n>0 && $$0 ~ /^   / && $$2 == "false") \
-      {print "--flag"; print p "-" substr($$1,0,length($$1)-1)} \
-    ' "$(CONFIG)"))
+> $(eval FLAGS := --flag "$(PACKAGE):static")
+> $(eval FLAGS += $(shell bin/stack-yaml-flags "$(CONFIG)"))
+> @echo "DEBUG FLAGS" $(FLAGS)
 > @docker image inspect "$(REPO)" >/dev/null 2>&1 \
 >   || docker buildx build \
 >        --build-arg "GHC_VERSION=$(GHC_VERSION)" \

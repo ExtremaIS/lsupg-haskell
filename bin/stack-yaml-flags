@@ -1,0 +1,50 @@
+#!/usr/bin/awk -f
+
+##############################################################################
+# Usage: stack-yaml-flags STACK_YAML
+#
+# Convert flags configured in stack.yaml to command-line arguments
+#
+# Arguments:
+#   STACK_YAML  stack.yaml configuration file
+#
+# Output: one argument per line
+#
+# If you specify a flag as an argument to stack, any flags configured in the
+# stack.yaml file are not used.  This script converts flags configured in
+# the stack.yaml file to command-line arguments so that they can be passed via
+# the command-line as well.
+##############################################################################
+
+# process flags configuration
+/^flags:$/ {
+  n=1
+  next
+}
+
+# until the next blank line (or end of file)
+/^$/ {
+  n=0
+}
+
+# ignore commented lines
+(n>0 && $1 ~ /^#/) {
+  next
+}
+
+# store package name in variable p
+(n>0 && $0 ~ /^  [^ ]/) {
+  p=$1
+}
+
+# handle true flags
+(n>0 && $0 ~ /^   / && $2 == "true") {
+  print "--flag"
+  print p substr($1, 0, length($1)-1)
+}
+
+# handle false flags
+(n>0 && $0 ~ /^   / && $2 == "false") {
+  print "--flag"
+  print p "-" substr($1, 0, length($1)-1)
+}
