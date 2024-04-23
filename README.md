@@ -183,6 +183,7 @@ parsing is done correctly.
 ### Links
 
 * GitHub: <https://github.com/ExtremaIS/lsupg-haskell>
+* GitHub Actions CI: <https://github.com/ExtremaIS/lsupg-haskell/actions>
 
 ### Branches
 
