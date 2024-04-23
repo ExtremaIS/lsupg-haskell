@@ -184,6 +184,14 @@ parsing is done correctly.
 
 * GitHub: <https://github.com/ExtremaIS/lsupg-haskell>
 
+### Branches
+
+The `main` branch is reserved for releases.  It may be considered stable, and
+`HEAD` is always the latest release.
+
+The `develop` branch is the primary development branch.  It contains changes
+that have not yet been released, and it is not necessarily stable.
+
 ### Tags
 
 All releases are tagged in the `main` branch.  Release tags are signed using
