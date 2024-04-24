@@ -2,7 +2,7 @@ resolver: lts-16.31
 
 docker:
   enable: false
-  repo: "lsugp-build:8.8.4"
+  repo: "lsupg-build:8.8.4"
 
 packages:
   - .

@@ -2,7 +2,7 @@ resolver: lts-14.27
 
 docker:
   enable: false
-  repo: "lsugp-build:8.6.5"
+  repo: "lsupg-build:8.6.5"
 
 packages:
   - .
