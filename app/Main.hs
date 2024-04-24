@@ -2,20 +2,17 @@
 -- |
 -- Module      : Main
 -- Description : lsupg: list items in a container that can be upgraded
--- Copyright   : Copyright (c) 2021-2022 Travis Cardwell
+-- Copyright   : Copyright (c) 2021-2024 Travis Cardwell
 -- License     : MIT
 --
 -- See the README for details.
 ------------------------------------------------------------------------------
 
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeApplications #-}
 
 module Main (main) where
-
--- https://hackage.haskell.org/package/ansi-wl-pprint
-import qualified Text.PrettyPrint.ANSI.Leijen as Doc
-import Text.PrettyPrint.ANSI.Leijen (Doc)
 
 -- https://hackage.haskell.org/package/base
 import Control.Applicative (many, optional)
@@ -43,6 +40,7 @@ import qualified LsUpg.Component as Component
 import LsUpg.Component.Nix (defaultNixPath)
 
 -- (lsupg:executable)
+import qualified Build
 import qualified LibOA
 
 ------------------------------------------------------------------------------
@@ -155,6 +153,12 @@ runSpecified Options{..} =
         exitWith $ ExitFailure 2
 
 ------------------------------------------------------------------------------
+-- $Version
+
+version :: String
+version = $(Build.version)
+
+------------------------------------------------------------------------------
 -- $Main
 
 main :: IO ()
@@ -167,7 +171,7 @@ main = do
   where
     pinfo :: OA.ParserInfo Options
     pinfo
-      = OA.info (LibOA.helper <*> LibOA.versioner LsUpg.version <*> options)
+      = OA.info (LibOA.helper <*> LibOA.versioner version <*> options)
       $ mconcat
           [ OA.fullDesc
           , OA.progDesc "list items that can be upgraded"
@@ -179,21 +183,21 @@ main = do
               ]
           ]
 
-    outputFormatHelp :: Doc
+    outputFormatHelp :: LibOA.Doc
     outputFormatHelp
       = LibOA.section "FORMATs:"
-      . Doc.text
+      . LibOA.string
       . intercalate ", "
       . map (TTC.render @LsUpg.OutputFormat)
       $ [minBound ..]
 
-    componentsHelp :: Doc
+    componentsHelp :: LibOA.Doc
     componentsHelp = LibOA.section "COMPONENTs:" $ LibOA.table_ 2
       [ [TTC.render (Component.name c), Component.description c]
       | c <- LsUpg.allComponents
       ]
 
-    exitCodesHelp :: Doc
+    exitCodesHelp :: LibOA.Doc
     exitCodesHelp = LibOA.section "Exit codes:" $ LibOA.table_ 2
       [ ["0", "no upgrades available"]
       , ["1", "program error"]

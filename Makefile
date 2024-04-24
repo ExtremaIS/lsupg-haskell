@@ -8,21 +8,6 @@ EXECUTABLES := lsupg
 
 MODE ?= stack
 
-CABAL_TEST_GHC_VERSIONS += 8.8.4
-CABAL_TEST_GHC_VERSIONS += 8.10.7
-CABAL_TEST_GHC_VERSIONS += 9.0.2
-CABAL_TEST_GHC_VERSIONS += 9.2.2
-
-STACK_TEST_CONFIGS += stack-8.8.4.yaml
-STACK_TEST_CONFIGS += stack-8.10.7.yaml
-STACK_TEST_CONFIGS += stack-9.0.2.yaml
-STACK_TEST_CONFIGS += stack-9.2.2.yaml
-
-CABAL_STATIC_REPO_8.8.4  := utdemir/ghc-musl:v24-ghc884
-CABAL_STATIC_REPO_8.10.7 := utdemir/ghc-musl:v24-ghc8107
-CABAL_STATIC_REPO_9.0.2  := utdemir/ghc-musl:v24-ghc902
-CABAL_STATIC_REPO_9.2.2  := utdemir/ghc-musl:v24-ghc922
-
 ##############################################################################
 # Make configuration
 
@@ -50,22 +35,13 @@ ifeq ($(MODE), cabal)
       CABAL_ARGS += "--project-file=$(PROJECT_FILE_AUTO)"
     endif
   endif
-  CABAL_STATIC_REPO :=
-  ifneq ($(origin CABAL_STATIC_REPO_$(GHC_VERSION)), undefined)
-    CABAL_STATIC_REPO := $(CABAL_STATIC_REPO_$(GHC_VERSION))
-  endif
 else ifeq ($(MODE), stack)
   STACK_ARGS :=
   ifneq ($(origin CONFIG), undefined)
     STACK_ARGS += --stack-yaml "$(CONFIG)"
-  else
-    CONFIG := stack.yaml
   endif
   ifneq ($(origin RESOLVER), undefined)
     STACK_ARGS += --resolver "$(RESOLVER)"
-  endif
-  ifneq ($(origin STACK_NIX_PATH), undefined)
-    STACK_ARGS += "--nix-path=$(STACK_NIX_PATH)"
   endif
 else
   $(error unknown MODE: $(MODE))
@@ -106,9 +82,9 @@ endef
 build: hr
 build: # build package *
 ifeq ($(MODE), cabal)
-> cabal v2-build $(CABAL_ARGS)
+> cabal v2-build $(CABAL_ARGS) --enable-tests --enable-benchmarks
 else
-> stack build $(STACK_ARGS)
+> stack build $(STACK_ARGS) --test --bench --no-run-tests --no-run-benchmarks
 endif
 .PHONY: build
 
@@ -129,7 +105,6 @@ endif
 
 clean-all: clean
 clean-all: # clean package and remove artifacts
-> @rm -rf .hie
 > @rm -rf .stack-work
 > @rm -rf build
 > @rm -rf dist-newstyle
@@ -137,6 +112,17 @@ clean-all: # clean package and remove artifacts
 > @rm -f cabal.project.local
 > @rm -f result*
 .PHONY: clean-all
+
+coverage: hr
+coverage: # run tests with code coverage *
+ifeq ($(MODE), cabal)
+> cabal v2-test $(CABAL_ARGS) \
+>   --enable-coverage --enable-tests --test-show-details=always
+else
+> stack test $(STACK_ARGS) --coverage
+> stack hpc report .
+endif
+.PHONY: coverage
 
 doc-api: hr
 doc-api: # build API documentation *
@@ -154,9 +140,15 @@ grep: # grep all non-hidden files for expression E
 .PHONY: grep
 
 help: # show this help
-> @grep '^[a-zA-Z0-9_-]\+:[^#]*# ' $(MAKEFILE_LIST) \
->   | sed 's/^\([^:]\+\):[^#]*# \(.*\)/make \1\t\2/' \
->   | column -t -s $$'\t'
+> @if command -v column >/dev/null 2>&1 \
+>  ; then \
+>    grep '^[a-zA-Z0-9_-]\+:[^#]*# ' $(MAKEFILE_LIST) \
+>    | sed 's/^\([^:]\+\):[^#]*# \(.*\)/make \1\t\2/' \
+>    | column -t -s $$'\t' \
+>  ; else \
+>    grep '^[a-zA-Z0-9_-]\+:[^#]*# ' $(MAKEFILE_LIST) \
+>    | sed 's/^\([^:]\+\):[^#]*# \(.*\)/make \1\t\2/' \
+>  ; fi
 > @echo
 > @echo "Cabal mode (MODE=cabal)"
 > @echo "  * Set GHC_VERSION to specify a GHC version."
@@ -165,7 +157,6 @@ help: # show this help
 > @echo "Stack mode (MODE=stack)"
 > @echo "  * Set CONFIG to specify a stack.yaml file."
 > @echo "  * Set RESOLVER to specify a Stack resolver."
-> @echo "  * Set STACK_NIX_PATH to specify a Stack Nix path."
 .PHONY: help
 
 hlint: # run hlint on all Haskell source
@@ -192,6 +183,10 @@ hsrecent: # show N most recently modified Haskell files
 hssloc: # count lines of Haskell source
 > @$(call hs_files) | xargs wc -l | tail -n 1 | sed 's/^ *\([0-9]*\).*$$/\1/'
 .PHONY: hssloc
+
+ignored: # list files ignored by git
+> @git ls-files . --ignored --exclude-standard --others
+.PHONY: ignored
 
 recent: # show N most recently modified files
 > $(eval N := "10")
@@ -248,40 +243,49 @@ source-tar: # create source tarball using tar
 > @rm -f build/.gitignore
 .PHONY: source-tar
 
-stan: hr
-stan: export STAN_USE_DEFAULT_CONFIG=True
-stan: # run stan static analysis
-ifeq ($(MODE), cabal)
-> @cabal v2-build -f write-hie
-else
-> @stack build --flag $(PACKAGE):write-hie
-endif
-> @stan
-.PHONY: stan
-
 static: hr
 static: # build a static executable *
 > $(eval VERSION := $(call get_version))
 ifeq ($(MODE), cabal)
-> @test -n "$(CABAL_STATIC_REPO)" \
->   || $(call die,"Docker repo not configured for GHC $(GHC_VERSION)")
+> $(eval REPO := "$(PACKAGE)-build:$(GHC_VERSION)")
+> @docker image inspect "$(REPO)" >/dev/null 2>&1 \
+>   || docker buildx build \
+>        --build-arg "GHC_VERSION=$(GHC_VERSION)" \
+>        -t "$(REPO)" \
+>        -f docker/Dockerfile \
+>        .
 > @rm -rf dist-newstyle
-> @docker run --rm -it -v "$(CURDIR):/host" "$(CABAL_STATIC_REPO)" \
->   "/host/script/build-cabal-static.sh" --flags=static $(CABAL_ARGS)
+> docker run --rm -it -v "$(CURDIR):/host" "$(REPO)" \
+>   "/host/bin/build-cabal-static.sh" --flags=static $(CABAL_ARGS)
 > @mkdir -p "build"
-> @cp "$$(find dist-newstyle -type f -name lsupg)" "build"
-> @strip "build/lsupg"
-> @cd build && tar -Jcvf "lsupg-$(VERSION).tar.xz" "lsupg"
+> $(foreach EXE,$(EXECUTABLES), \
+    @cp "$$(find dist-newstyle -type f -name $(EXE))" "build" $(newline) \
+    @strip "build/$(EXE)" $(newline) \
+  )
+> @cd build && tar -Jcvf "$(PACKAGE)-$(VERSION).tar.xz" $(EXECUTABLES)
 else
-> @test -f "$(CONFIG)" || $(call die,"$(CONFIG) not found")
+ifeq ($(origin CONFIG), undefined)
+> $(eval CONFIG := stack.yaml)
+endif
 > $(eval REPO := $(shell grep '^ *repo: "[^"]*"$$' "$(CONFIG)" \
     | sed -e 's/^[^"]*"//' -e 's/"$$//'))
-> @test -n "$(REPO)" || $(call die,"Docker repo not configured in $(CONFIG)")
+> $(eval GHC_VERSION := $(shell echo "$(REPO)" | sed 's/^[^:]*://' ))
+> $(eval FLAGS := --flag "$(PACKAGE):static")
+> $(eval FLAGS += $(shell bin/stack-yaml-flags "$(CONFIG)"))
+> @docker image inspect "$(REPO)" >/dev/null 2>&1 \
+>   || docker buildx build \
+>        --build-arg "GHC_VERSION=$(GHC_VERSION)" \
+>        -t "$(REPO)" \
+>        -f docker/Dockerfile \
+>        .
 > @rm -rf .stack-work
-> @stack build --stack-yaml $(CONFIG) --flag lsupg:static --docker
+> stack build --stack-yaml $(CONFIG) $(FLAGS) --docker
 > @mkdir -p "build"
-> @cp "$$(find .stack-work/install -type f -name lsupg)" "build"
-> @cd build && tar -Jcvf "lsupg-$(VERSION).tar.xz" "lsupg"
+> $(foreach EXE,$(EXECUTABLES), \
+    @cp "$$(find .stack-work/install -type f -name $(EXE))" "build" \
+    $(newline) \
+  )
+> @cd build && tar -Jcvf "$(PACKAGE)-$(VERSION).tar.xz" $(EXECUTABLES)
 endif
 .PHONY: static
 
@@ -300,23 +304,34 @@ else
 endif
 .PHONY: test
 
-test-all: # run all configured tests
-ifeq ($(MODE), cabal)
-> $(foreach GHC_VERSION,$(CABAL_TEST_GHC_VERSIONS), \
-    @command -v hr >/dev/null 2>&1 && hr $(GHC_VERSION) || true $(newline) \
-    @make test GHC_VERSION=$(GHC_VERSION) $(newline) \
-  )
-else
-> $(foreach CONFIG,$(STACK_TEST_CONFIGS), \
-    @command -v hr >/dev/null 2>&1 && hr $(CONFIG) || true $(newline) \
-    @make test CONFIG=$(CONFIG) $(newline) \
-  )
-endif
+test-all: # run all configured tests using MODE
+> @./test-all.sh "$(MODE)"
 .PHONY: test-all
 
-test-nightly: # run tests for the latest Stackage nightly release
+test-bounds-lower: # test lower bounds (Cabal only)
+ifeq ($(MODE), stack)
+> $(error test-bounds-lower not supported in Stack mode)
+endif
+> @make test-build CABAL_ARGS="--project-file=cabal-bounds-lower.project"
+.PHONY: test-bounds-lower
+
+test-bounds-upper: # test upper bounds (Cabal only)
+ifeq ($(MODE), stack)
+> $(error test-bounds-upper not supported in Stack mode)
+endif
+> @make test-build CABAL_ARGS="--project-file=cabal-bounds-upper.project"
+.PHONY: test-bounds-upper
+
+test-build: hr
+test-build: build
+test-build: test
+test-build: doc-api
+test-build: # build, run tests, build API documentation *
+.PHONY: test-build
+
+test-nightly: # run tests for the latest Stackage nightly release (Stack only)
 ifeq ($(MODE), cabal)
-> $(error test-nightly not supported in CABAL mode)
+> $(error test-nightly not supported in Cabal mode)
 endif
 > @make test RESOLVER=nightly
 .PHONY: test-nightly

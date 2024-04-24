@@ -2,15 +2,21 @@
 -- |
 -- Module      : LsUpg.Component
 -- Description : component types
--- Copyright   : Copyright (c) 2021-2022 Travis Cardwell
+-- Copyright   : Copyright (c) 2021-2024 Travis Cardwell
 -- License     : MIT
 ------------------------------------------------------------------------------
 
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE DeriveLift #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+
+#if !MIN_VERSION_text(1,2,4)
+{-# LANGUAGE TemplateHaskellQuotes #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+#endif
 
 module LsUpg.Component
   ( -- * Types
@@ -39,6 +45,9 @@ import qualified Data.Csv as CSV
 import Data.Hashable (Hashable)
 
 -- https://hackage.haskell.org/package/template-haskell
+#if !MIN_VERSION_text(1,2,4)
+import qualified Language.Haskell.TH as TH
+#endif
 import qualified Language.Haskell.TH.Syntax as THS
 
 -- https://hackage.haskell.org/package/text
@@ -143,3 +152,14 @@ instance CSV.ToField Name where
 
 instance ToJSON Name where
   toJSON = A.String . TTC.render
+
+------------------------------------------------------------------------------
+
+#if !MIN_VERSION_text(1,2,4)
+instance THS.Lift Text where
+  lift = TH.appE (TH.varE 'T.pack) . TH.stringE . T.unpack
+#if MIN_VERSION_template_haskell(2,16,0)
+  liftTyped =
+    fmap THS.TExp . TH.appE (TH.varE 'T.pack) . TH.stringE . T.unpack
+#endif
+#endif

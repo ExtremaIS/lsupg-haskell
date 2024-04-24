@@ -1,0 +1,12 @@
+resolver: lts-21.25
+
+docker:
+  enable: false
+  repo: "lsupg-build:9.4.8"
+
+packages:
+  - .
+
+flags:
+  aeson:
+    ordered-keymap: false

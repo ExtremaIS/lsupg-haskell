@@ -24,6 +24,26 @@ following conventions:
 
 [KaC]: <https://keepachangelog.com/en/1.0.0/>
 
+## 0.4.0.0 (2024-04-25)
+
+### Breaking
+
+* Add support for `optparse-applicative` `0.18`
+
+### Non-Breaking
+
+* Bump `aeson` dependency version upper bound
+* Bump `base` dependency version upper bound
+* Bump `bytestring` dependency version upper bound
+* Bump `hashable` dependency version upper bound
+* Bump `tasty` dependency version upper bound
+* Bump `template-haskell` dependency version upper bound
+* Bump `text` dependency version upper bound
+* Bump `transformers` dependency version upper bound
+* Bump `ttc` dependency version upper bound
+* Bump `vector` dependency version upper bound
+* Adjust dependency constraints to match tested versions
+
 ## 0.3.0.2 (2022-04-12)
 
 ### Non-Breaking

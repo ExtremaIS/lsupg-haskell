@@ -1,8 +1,8 @@
-resolver: lts-19.2
-
-packages:
-  - .
+resolver: lts-19.33
 
 docker:
   enable: false
-  repo: "utdemir/ghc-musl:v24-ghc902"
+  repo: "lsupg-build:9.0.2"
+
+packages:
+  - .

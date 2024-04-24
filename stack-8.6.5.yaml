@@ -1,8 +1,8 @@
-resolver: lts-16.31
+resolver: lts-14.27
 
 docker:
   enable: false
-  repo: "lsupg-build:8.8.4"
+  repo: "lsupg-build:8.6.5"
 
 packages:
   - .

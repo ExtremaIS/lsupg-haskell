@@ -1,8 +1,8 @@
 resolver: lts-18.28
 
-packages:
-  - .
-
 docker:
   enable: false
-  repo: "utdemir/ghc-musl:v24-ghc8107"
+  repo: "lsupg-build:8.10.7"
+
+packages:
+  - .
