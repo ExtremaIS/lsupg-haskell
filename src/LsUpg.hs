@@ -177,7 +177,7 @@ runAll = run allComponents
 ------------------------------------------------------------------------------
 -- $Internal
 
--- | Format a table with all columns left-justfied
+-- | Format a table with all columns left-justified
 table :: [[T.Text]] -> TL.Text
 table rows = TL.unlines
     [ TL.fromStrict . T.stripEnd $ T.concat
