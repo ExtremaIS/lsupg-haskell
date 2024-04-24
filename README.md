@@ -50,18 +50,47 @@ Check the [Releases][] page for a tarball with a built static executable.
 
 #### Installation From Source
 
-`lsupg` can be built from source using [Stack][].  For example, you can build
-the latest release as follows:
+`lsupg` can be built from source using [Stack][] or [Cabal][].  Building
+should be done in a Linux development environment, and [Docker][] is used to
+create the static build.
 
 [Stack]: <https://www.haskellstack.org>
+[Cabal]: <https://www.haskell.org/cabal/>
+[Docker]: <https://www.docker.com/>
+
+First clone the repository:
 
 ```
 $ git clone https://github.com/ExtremaIS/lsupg-haskell.git
 $ cd lsupg-haskell
-$ make static
 ```
 
-The `lsupg` static executable is placed in the `build` directory.
+To build using the latest versions of dependencies, be sure to update your
+`alpine:latest` image before building.
+
+```
+$ docker pull alpine:latest
+```
+
+Build the latest release using [Stack][] as follows.  If you do not specify
+`CONFIG`, `stack.yaml` is used.
+
+```
+$ make static CONFIG=stack-8.10.7.yaml
+```
+
+Alternatively, build the latest release using [Cabal][] as follows.  If you do
+not specify `GHC_VERSION`, the version of `ghc` in your `PATH` is used.
+
+```
+$ make static MODE=cabal GHC_VERSION=8.10.7
+```
+
+In both cases, the `lsupg` static executable is placed in the `build`
+directory.
+
+After building, remove the `lsupg-build` image that was created to build the
+static executable using `docker rmi`.
 
 ### Usage
 
@@ -179,6 +208,12 @@ package management commands is displayed, allowing you to check that the
 parsing is done correctly.
 
 ## Project
+
+Since this utility is meant to be built as a static executable, the project is
+not in [Hackage][] or [Stackage][].
+
+[Hackage]: <https://hackage.haskell.org/>
+[Stackage]: <https://www.stackage.org/>
 
 ### Links
 
