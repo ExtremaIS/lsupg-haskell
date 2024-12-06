@@ -34,6 +34,7 @@ following conventions:
 ### Non-Breaking
 
 * Bump `base` dependency version upper bound
+* Bump `hashable` dependency version upper bound
 * Bump `template-haskell` dependency version upper bound
 
 ## 0.4.0.0 (2024-04-25)

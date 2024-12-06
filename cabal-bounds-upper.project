@@ -27,7 +27,7 @@ constraints:
   , directory == 1.3.8.5
 
     -- https://hackage.haskell.org/package/hashable
-  , hashable == 1.4.6.0
+  , hashable == 1.5.0.0
 
     -- https://hackage.haskell.org/package/optparse-applicative
   , optparse-applicative == 0.18.1.0
@@ -36,7 +36,7 @@ constraints:
   , prettyprinter == 1.7.1
 
     -- https://hackage.haskell.org/package/tasty
-  , tasty == 1.5
+  , tasty == 1.5.2
 
     -- https://hackage.haskell.org/package/tasty-hunit
   , tasty-hunit == 0.10.2
@@ -57,13 +57,13 @@ constraints:
   , ttc == 1.4.0.0
 
     -- https://hackage.haskell.org/package/typed-process
-  , typed-process == 0.2.11.1
+  , typed-process == 0.2.12.0
 
     -- https://hackage.haskell.org/package/unordered-containers
   , unordered-containers == 0.2.20
 
     -- https://hackage.haskell.org/package/vector
-  , vector == 0.13.1.0
+  , vector == 0.13.2.0
 
     -- https://hackage.haskell.org/package/yaml
   , yaml == 0.11.11.2
