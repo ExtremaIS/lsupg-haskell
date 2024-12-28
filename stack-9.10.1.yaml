@@ -2,7 +2,7 @@ resolver: nightly-2024-12-28
 
 docker:
   enable: false
-  repo: "lsupg-build:9.8.4"
+  repo: "lsupg-build:9.10.1"
 
 packages:
   - .
