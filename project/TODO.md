@@ -17,6 +17,14 @@ Components:
 
 ## Compatibility
 
+* GHC 9.12.1 boot libraries [`base`][] 4.21.0.0 and
+  [`template-haskell`][] 2.23.0.0 blocked by
+  [`aeson`][]
+
+[`base`]: <https://hackage.haskell.org/package/base>
+[`template-haskell`]: <https://hackage.haskell.org/package/template-haskell>
+[`aeson`]: <https://hackage.haskell.org/package/aeson>
+
 ## Documentation
 
 ## Project
