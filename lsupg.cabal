@@ -68,7 +68,7 @@ library
     , template-haskell >=2.15.0.0 && <2.23
     , text >=1.2.4.0 && <2.2
     , transformers >=0.5.6.2 && <0.7
-    , ttc >=1.1.0.0 && <1.5
+    , ttc >=1.1.0.0 && <1.6
     , typed-process >=0.2.6.0 && <0.3
     , unordered-containers >=0.2.10.0 && <0.3
     , vector >=0.12.1.2 && <0.14
