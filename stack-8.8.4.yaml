@@ -7,5 +7,9 @@ docker:
 packages:
   - .
 
+flags:
+  lsupg:
+    optparse-applicative_ge_0_18: false
+
 extra-deps:
   - ttc-1.2.0.0

@@ -6,3 +6,7 @@ docker:
 
 packages:
   - .
+
+flags:
+  lsupg:
+    optparse-applicative_ge_0_18: false

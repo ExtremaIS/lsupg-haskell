@@ -36,7 +36,7 @@ source-repository head
 
 flag optparse-applicative_ge_0_18
   description: Use optparse-applicative 0.18 or newer
-  default: False
+  default: True
   manual: False
 
 flag static

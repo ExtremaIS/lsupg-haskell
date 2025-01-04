@@ -10,5 +10,3 @@ packages:
 flags:
   aeson:
     ordered-keymap: false
-  lsupg:
-    optparse-applicative_ge_0_18: true
